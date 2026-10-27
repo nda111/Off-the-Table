@@ -71,7 +71,8 @@ ChatGPT 대화를 선택해 일괄 삭제하는 Chrome Manifest V3 확장 프로
 - i18n.js: 언어별 문구와 복수형 처리
 - _locales/: 확장 이름·설명·툴바 기본 문구 (브라우저 언어)
 - panel.css: 선택 색상, 삭제 모드 표시, 작업 바 스타일
-- tests/: 실제 네트워크를 사용하지 않는 테스트
+- tests/: 실제 네트워크를 사용하지 않는 테스트. 처음 한 번 `npm install` 후 `npm test`로 전부 실행합니다(Node.js와 jsdom 사용, 확장 자체에는 의존성 없음). `samples/*.html`(저장한 ChatGPT 페이지, 커밋하지 않음)이 있으면 그 페이지들에서도 확인합니다.
+- package.json: 테스트 도구 설정. 스토어용 압축 파일에는 package.json, package-lock.json, node_modules/, tests/, samples/를 넣지 않습니다.
 
 ## 문제 해결
 

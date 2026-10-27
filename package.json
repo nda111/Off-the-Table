@@ -1,0 +1,11 @@
+{
+  "name": "off-the-table-for-chatgpt",
+  "private": true,
+  "description": "Development tooling only; the extension itself has no dependencies.",
+  "scripts": {
+    "test": "node tests/run.js"
+  },
+  "devDependencies": {
+    "jsdom": "24.1.3"
+  }
+}
