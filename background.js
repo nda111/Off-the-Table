@@ -10,6 +10,7 @@ const tabLocales = new Map();
 function remember(tabId, status) {
   if (status?.badgeColor) tabThemes.set(tabId, status);
   if (status?.locale) tabLocales.set(tabId, status.locale);
+  if (typeof status?.browserDark === "boolean") setBrowserDark(status.browserDark);
 }
 function t(tabId, key, params) {
   return globalThis.CBDI18n.create(tabLocales.get(tabId), chrome.i18n?.getUILanguage?.()).t(key, params);
@@ -17,9 +18,28 @@ function t(tabId, key, params) {
 
 // Toolbar icon: the cat's pose shows the state (sitting: OFF, swatting: ON, asleep: not a
 // ChatGPT page). The icons are black on transparent; on ChatGPT tabs they are tinted with
-// the page's accent, elsewhere with a neutral gray that shows on light and dark toolbars.
+// the page's accent, elsewhere with a gray. Both follow the browser's light/dark setting,
+// which pages report (a service worker can't read it): a darker gray on light toolbars,
+// and a lighter gray and lifted accent on dark ones. Until a page reports, the manifest's
+// mid-gray icons show on either.
 const ICON_SIZES = [16, 32];
-const NEUTRAL_ICON = "#8e8e93";
+const NEUTRAL_ICON = { light: "#6e6e73", dark: "#c7c7cc" };
+let browserDark = null;
+const tabModes = new Map(); // tabId -> enabled, for re-tinting when the browser theme flips
+function iconColor(accent) {
+  if (!/^#[0-9a-f]{6}$/i.test(accent || "")) return NEUTRAL_ICON[browserDark ? "dark" : "light"];
+  if (!browserDark) return accent;
+  const lifted = [1, 3, 5].map(i => Math.round(parseInt(accent.slice(i, i + 2), 16) * 0.65 + 255 * 0.35));
+  return "#" + lifted.map(v => v.toString(16).padStart(2, "0")).join("");
+}
+function setBrowserDark(dark) {
+  if (dark === browserDark) return;
+  browserDark = dark;
+  setIcon(undefined, "unavailable", iconColor()).catch(() => {});
+  for (const [tabId, enabled] of tabModes) {
+    setIcon(tabId, enabled ? "active" : "inactive", iconColor(tabThemes.get(tabId)?.badgeColor)).catch(() => {});
+  }
+}
 const iconPath = (state, size) => `icons/toolbar_${state}_${size}.png`;
 const iconBitmaps = new Map();
 async function iconBitmap(state, size) {
@@ -43,7 +63,7 @@ async function tintedIcon(state, color) {
   return imageData;
 }
 // tabId undefined sets the default for every tab without its own icon.
-async function setIcon(tabId, state, color = NEUTRAL_ICON) {
+async function setIcon(tabId, state, color = iconColor()) {
   const target = tabId === undefined ? {} : { tabId };
   try {
     if (typeof OffscreenCanvas !== "function") throw new Error("no canvas");
@@ -58,6 +78,7 @@ async function setIcon(tabId, state, color = NEUTRAL_ICON) {
 // The badge is only for errors; the icon shows ON/OFF.
 async function setBadge(tabId, enabled, count = 0, error = "", theme) {
   remember(tabId, theme);
+  tabModes.set(tabId, enabled);
   const colors = tabThemes.get(tabId);
   await Promise.all([
     chrome.action.setBadgeText({ tabId, text: error ? "ERR" : "" }),
@@ -65,7 +86,7 @@ async function setBadge(tabId, enabled, count = 0, error = "", theme) {
     // setBadgeTextColor exists from Chrome 110; older builds keep the default white.
     chrome.action.setBadgeTextColor?.({ tabId, color: "#ffffff" }),
     chrome.action.setTitle({ tabId, title: error || t(tabId, enabled ? "bgTitleOn" : "sideTitle", { n: count }) }),
-    setIcon(tabId, enabled ? "active" : "inactive", colors?.badgeColor),
+    setIcon(tabId, enabled ? "active" : "inactive", iconColor(colors?.badgeColor)),
   ]);
 }
 
@@ -192,15 +213,14 @@ chrome.action.onClicked.addListener(tab => {
     });
 });
 
-chrome.tabs.onRemoved?.addListener(tabId => { tabThemes.delete(tabId); tabLocales.delete(tabId); });
+chrome.tabs.onRemoved?.addListener(tabId => { tabThemes.delete(tabId); tabLocales.delete(tabId); tabModes.delete(tabId); });
 
 // A tab that leaves ChatGPT gets the sleeping cat back (its URL is only visible to us on
 // chatgpt.com, so an unreadable URL also means another site).
 chrome.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== "loading" || isSupportedURL(tab?.url)) return;
   tabThemes.delete(tabId);
+  tabModes.delete(tabId);
   chrome.action.setBadgeText({ tabId, text: "" }).catch(() => {});
   setIcon(tabId, "unavailable").catch(() => {});
 });
-// Default for every tab: asleep and gray until a ChatGPT page reports its state.
-setIcon(undefined, "unavailable").catch(() => {});

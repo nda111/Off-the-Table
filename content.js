@@ -1,6 +1,6 @@
 // Off the Table for ChatGPT: sidebar UI and private API integration.
 (() => {
-  const VERSION = "0.13.2";
+  const VERSION = "0.13.3";
   const INSTANCE = "__cbdInstanceV2";
   // Always replace a previous instance. After an extension reload the old script is
   // orphaned but can share this world's globals, so a version check would keep a dead
@@ -357,6 +357,8 @@
       badgeColor: badgeTheme.color, badgeText: badgeTheme.text,
       // Lets the toolbar title and errors use the page's language.
       locale: i18n.locale,
+      // The browser's own light/dark setting (not ChatGPT's), for the toolbar icon color.
+      browserDark: Boolean(view.matchMedia?.("(prefers-color-scheme: dark)").matches),
     };
   }
   function publish() {
@@ -883,7 +885,10 @@
     if (document.body) themeObserver.observe(document.body, { attributes: true, attributeFilter: ["class", "style", "data-theme"] });
   }
   const darkQuery = view.matchMedia?.("(prefers-color-scheme: dark)");
-  if (darkQuery?.addEventListener) listen(darkQuery, "change", scheduleTheme);
+  if (darkQuery?.addEventListener) {
+    listen(darkQuery, "change", scheduleTheme);
+    listen(darkQuery, "change", publish);
+  }
 
   // ---------- Selection ----------
 

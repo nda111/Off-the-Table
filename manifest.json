@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "0.13.2",
+  "version": "0.13.3",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "icons": {
@@ -17,9 +17,9 @@
   "action": {
     "default_title": "__MSG_actionTitle__",
     "default_icon": {
-      "16": "icons/toolbar_unavailable_16.png",
-      "32": "icons/toolbar_unavailable_32.png",
-      "48": "icons/toolbar_unavailable_48.png"
+      "16": "icons/toolbar_default_16.png",
+      "32": "icons/toolbar_default_32.png",
+      "48": "icons/toolbar_default_48.png"
     }
   },
   "background": {

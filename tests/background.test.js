@@ -249,11 +249,10 @@
     equal(h.log.filter(e => e.kind === "script").length, 1, "Old protocol reinjected");
     equal(h.modes(), [[LEFT, true]], "Protocol 3 handshake then toggle");
   });
-  test("every tab starts with the sleeping cat; errors keep a badge", async source => {
+  test("errors keep a badge", async source => {
     const h = harness(source, { send(id, message, env) {
       return message.type === "cbd-status" ? { ok: true, protocol: 2, enabled: false } : env.DEFAULT;
     } });
-    equal(h.icons()[0], [undefined, "unavailable"], "Default icon is the unavailable pose");
     h.click(); await flush();
     equal(h.badges(), [[LEFT, "ERR"]], "Errors still use the badge");
   });
@@ -327,21 +326,27 @@
     try {
       const h = harness(source);
       await flush();
-      equal(fills.at(-1), "#8e8e93", "Tabs outside ChatGPT get the neutral gray");
-      h.request({ type: "cbd-mode", enabled: true, count: 3, badgeColor: "#8c5afa", badgeText: "#ffffff" }, { tab: tab(LEFT) });
+      equal(fills, [], "No icon is drawn before a page reports the browser theme (the manifest's gray shows)");
+      h.request({ type: "cbd-mode", enabled: true, count: 3, badgeColor: "#8c5afa", badgeText: "#ffffff", browserDark: false }, { tab: tab(LEFT) });
       await flush();
+      assert(fills.includes("#6e6e73"), "Light browser: tabs outside ChatGPT get the darker gray");
       equal(fills.at(-1), "#8c5afa", "Theme accent icon");
       h.request({ type: "cbd-mode", enabled: false, count: 3 }, { tab: tab(LEFT) });
       await flush();
       equal(fills.at(-1), "#8c5afa", "Accent is remembered for later updates without colors");
       equal(h.log.filter(e => e.kind === "color").map(e => e.color).at(-1), "#b3261e", "The (error-only) badge is red");
+      fills.length = 0;
+      h.request({ type: "cbd-mode", enabled: false, count: 3, browserDark: true }, { tab: tab(LEFT) });
+      await flush();
+      assert(fills.includes("#c7c7cc") && fills.at(-1) === "#b494fc",
+        "Dark browser: lighter gray elsewhere, and the accent lifted 35% toward white");
     } finally {
       Object.assign(globalThis, saved);
     }
   });
   test("invalid toolbar tab id is ignored", async source => {
     const h = harness(source); h.click({ id: undefined, windowId: 7 }); await flush();
-    equal(h.log.filter(e => !(e.kind === "icon" && e.tabId === undefined)), [], "Invalid tab must not invoke any browser operation");
+    equal(h.log, [], "Invalid tab must not invoke any browser operation");
   });
 
   test("extensions/internal/foreign/missing URLs are silent no-ops", async source => {
