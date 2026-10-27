@@ -1,6 +1,6 @@
 // Off the Table for ChatGPT: sidebar UI and private API integration.
 (() => {
-  const VERSION = "0.13.0";
+  const VERSION = "0.13.1";
   const INSTANCE = "__cbdInstanceV2";
   // Always replace a previous instance. After an extension reload the old script is
   // orphaned but can share this world's globals, so a version check would keep a dead
@@ -215,6 +215,11 @@
   const sideTip = el("div", { className: "cbd-tip", id: "cbd-side-tip", role: "tooltip", hidden: true }, [sideTipLabel, sideTipKeys]);
   sideBtn.setAttribute("aria-describedby", "cbd-side-tip");
   let sideTipTimer = 0;
+  // Light/dark of the page, and ChatGPT tooltip colors learned per mode (see learnTipStyle).
+  let pageLight = true;
+  const TIP_STORAGE = "cbd:tip-style";
+  let learnedTips = {};
+  try { learnedTips = JSON.parse(view.localStorage.getItem(TIP_STORAGE) || "{}") || {}; } catch { learnedTips = {}; }
 
   const sideInner = el("span");
   sideInner.innerHTML = TRASH_ICON;
@@ -370,6 +375,7 @@
     if (document.body) {
       if (!bar.isConnected) document.body.append(bar);
     }
+    watchTooltips();
     const docked = placeSideButton();
     lockHeader(docked && state.enabled);
     sideBtn.disabled = state.busy;
@@ -808,6 +814,7 @@
     const accentColor = accent?.color || text;
     // Light themes get a softer selection tint and ON switch; dark themes keep full strength.
     const light = luminance(surface) > 0.5;
+    if (light !== pageLight) { pageLight = light; applyTipStyle(); }
     const switchMix = light ? 0.8 : 1;
     const switchColor = accentColor.slice(0, 3).map((v, i) => Math.round(v * switchMix + surface[i] * (1 - switchMix)));
     const rules = [
@@ -1164,6 +1171,45 @@
 
   // Chip tooltip under the sidebar switch, styled like ChatGPT's own (label + shortcut).
   // It replaces the native title, which would show a second, unstyled tooltip.
+  // The chip copies ChatGPT's own tooltip: whenever one appears (it is portaled straight
+  // into <body>), its colors are read and remembered per light/dark mode, so the chip
+  // matches in both modes and follows redesigns. Until then the light-mode values apply.
+  function applyTipStyle() {
+    const style = learnedTips[pageLight ? "light" : "dark"];
+    for (const name of ["bg", "fg", "border", "shadow", "kbd"]) {
+      if (style?.[name]) sideTip.style.setProperty(`--cbd-tip-${name}`, style[name]);
+      else sideTip.style.removeProperty(`--cbd-tip-${name}`);
+    }
+  }
+  function learnTipStyle(tip) {
+    const box = view.getComputedStyle(tip), kbd = tip.querySelector("kbd");
+    const bg = box.backgroundColor;
+    if (!bg || /^(?:transparent|rgba\(0, 0, 0, 0\))$/.test(bg)) return;
+    const style = {
+      bg, fg: box.color, shadow: box.boxShadow,
+      border: box.borderTopWidth && box.borderTopWidth !== "0px" ? `${box.borderTopWidth} ${box.borderTopStyle} ${box.borderTopColor}` : "none",
+      kbd: kbd ? view.getComputedStyle(kbd).backgroundColor : "",
+    };
+    const mode = pageLight ? "light" : "dark";
+    if (JSON.stringify(learnedTips[mode]) === JSON.stringify(style)) return;
+    learnedTips = { ...learnedTips, [mode]: style };
+    try { view.localStorage.setItem(TIP_STORAGE, JSON.stringify(learnedTips)); } catch { /* storage blocked */ }
+    applyTipStyle();
+  }
+  const tipWatcher = new MutationObserver(records => {
+    for (const record of records) for (const node of record.addedNodes) {
+      if (node.nodeType !== 1 || node === sideTip) continue;
+      const tip = node.matches?.('[role="tooltip"]') ? node : node.querySelector?.('[role="tooltip"]');
+      if (tip && !tip.closest(".cbd-tip, .cbd-bar")) learnTipStyle(tip);
+    }
+  });
+  let tipWatchedBody = null;
+  function watchTooltips() {
+    if (!document.body || tipWatchedBody === document.body) return;
+    tipWatcher.disconnect();
+    tipWatcher.observe(document.body, { childList: true });
+    tipWatchedBody = document.body;
+  }
   function renderSideTip() {
     setText(sideTipLabel, t("sideTitle"));
     setText(sideTipKeys, toggleKeys());
@@ -1337,6 +1383,7 @@
     for (const node of document.querySelectorAll("[data-cbd-fade]")) delete node.dataset.cbdFade;
     sideBtn.remove();
     clearTimeout(sideTipTimer);
+    tipWatcher.disconnect();
     sideTip.remove();
     barResize?.disconnect();
     if (globalThis[INSTANCE]?.destroy === destroy) delete globalThis[INSTANCE];

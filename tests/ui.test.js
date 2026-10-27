@@ -152,6 +152,18 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
       "Hovering shows the chip with the action and Ctrl+D");
     side.dispatchEvent(new Event("pointerleave"));
     assert(sideTip().hidden, "Leaving hides it");
+    // ChatGPT's own tooltip (portaled into <body>) teaches the chip its colors.
+    const nativeTip = document.createElement("div");
+    nativeTip.innerHTML = '<div role="tooltip" style="background-color: rgb(255, 255, 255); color: rgb(13, 13, 13); border: 1px solid rgb(200, 200, 200)">'
+      + '<span>Search</span><kbd style="background-color: rgba(0, 0, 0, 0.1)">Ctrl+K</kbd></div>';
+    document.body.append(nativeTip);
+    await settle();
+    const tipVar = name => sideTip().style.getPropertyValue(`--cbd-tip-${name}`);
+    assert(tipVar("bg") === "rgb(255, 255, 255)" && tipVar("fg") === "rgb(13, 13, 13)" && tipVar("kbd") === "rgba(0, 0, 0, 0.1)"
+      && tipVar("border") === "1px solid rgb(200, 200, 200)" && JSON.parse(localStorage.getItem("cbd:tip-style")).light.bg === "rgb(255, 255, 255)",
+      "The chip copies the colors of ChatGPT's tooltip and remembers them per mode");
+    nativeTip.remove();
+    localStorage.removeItem("cbd:tip-style");
     side.click();
     assert(status().enabled && side.getAttribute("aria-pressed") === "true", "The sidebar switch turns delete mode ON");
     const barStyle = document.querySelector(".cbd-bar").style;

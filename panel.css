@@ -162,14 +162,16 @@ a[data-cbd="vanishing"], [data-cbd-row="vanishing"] {
   z-index: 2147483647 !important; pointer-events: none !important;
   display: flex !important; align-items: center; gap: 8px;
   max-width: min(320px, calc(100vw - 16px)); box-sizing: border-box;
-  padding: 5px 12px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, .05);
-  background: #0d0d0d; color: #fff; box-shadow: 0 8px 18px rgba(15, 23, 42, .2);
+  /* Defaults are ChatGPT's light-mode tooltip; content.js copies the live tooltip's colors. */
+  padding: 5px 12px; border-radius: 16px; border: var(--cbd-tip-border, 1px solid rgba(255, 255, 255, .05));
+  background: var(--cbd-tip-bg, #0d0d0d); color: var(--cbd-tip-fg, #fff);
+  box-shadow: var(--cbd-tip-shadow, 0 8px 18px rgba(15, 23, 42, .2));
   font: 600 14px/18px -apple-system-body, ui-sans-serif, -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
   white-space: nowrap; animation: cbd-tip-in var(--cbd-dur-hover) ease-out;
 }
 .cbd-tip[hidden] { display: none !important; }
 .cbd-tip kbd {
-  padding: 0 6px; border-radius: 8px; background: rgba(255, 255, 255, .25); color: inherit; font: inherit;
+  padding: 0 6px; border-radius: 8px; background: var(--cbd-tip-kbd, rgba(255, 255, 255, .25)); color: inherit; font: inherit;
 }
 @keyframes cbd-tip-in { from { opacity: 0; transform: translateY(-2px); } }
 /* Search and sidebar toggle while delete mode is ON. */
