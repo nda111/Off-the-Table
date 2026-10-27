@@ -1,6 +1,6 @@
 // Off the Table for ChatGPT: sidebar UI and private API integration.
 (() => {
-  const VERSION = "0.11.0";
+  const VERSION = "0.12.0";
   const INSTANCE = "__cbdInstanceV2";
   // Always replace a previous instance. After an extension reload the old script is
   // orphaned but can share this world's globals, so a version check would keep a dead

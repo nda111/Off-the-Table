@@ -31,9 +31,10 @@
         onClicked: { addListener(fn) { assert(!onClick, "One action listener"); onClick = fn; } },
         async setBadgeText(data) { record("badge", data); },
         async setBadgeBackgroundColor(data) { record("color", data); },
-        async setTitle(data) { record("title", data); }
+        async setTitle(data) { record("title", data); },
+        async setIcon(data) { record("icon", { tabId: data.tabId, state: (data.path?.[16] || "").match(/toolbar_(\w+?)_16/)?.[1] }); }
       },
-      runtime: { onMessage: { addListener(fn) { assert(!onMessage, "One runtime listener"); onMessage = fn; } } },
+      runtime: { onMessage: { addListener(fn) { assert(!onMessage, "One runtime listener"); onMessage = fn; } }, getURL: path => "chrome-extension://test/" + path },
       tabs: {
         async query(query) {
           record("query", { query });
@@ -105,7 +106,8 @@
       sends(type) { return log.filter(e => e.kind === "send" && e.message.type === type); },
       modes() { return h.sends("cbd-set-mode").map(e => [e.tabId, e.message.enabled]); },
       helpers() { return h.sends("cbd-show-local-toggle").map(e => e.tabId).sort((a, b) => a - b); },
-      badges() { return log.filter(e => e.kind === "badge").map(e => [e.tabId, e.text]); }
+      badges() { return log.filter(e => e.kind === "badge" && e.text).map(e => [e.tabId, e.text]); },
+      icons() { return log.filter(e => e.kind === "icon").map(e => [e.tabId, e.state]); }
     });
     return h;
   }
@@ -125,7 +127,8 @@
     equal(h.modes(), [[LEFT, true]], "First click");
     h.click(); await flush();
     equal(h.modes(), [[LEFT, true], [LEFT, false]], "Second click");
-    equal(h.badges(), [[LEFT, "ON"], [LEFT, "OFF"]], "ON/OFF badges");
+    equal(h.badges(), [], "No badge text for ON/OFF");
+    equal(h.icons().filter(([id]) => id === LEFT), [[LEFT, "active"], [LEFT, "inactive"]], "The icon pose shows ON/OFF");
     equal(h.timers.size, 0, "Resolved calls clear fake timers");
     equal(h.log.filter(e => e.kind === "script" || e.kind === "css"), [], "Healthy content needs no injection");
   });
@@ -221,7 +224,7 @@
     equal(h.sends("cbd-status").length, 1, "Second job cannot enter ensureContent before first job ends");
     equal(h.modes(), [], "First job remains pending");
     release(); await flush(); equal(h.modes(), [[LEFT, true], [LEFT, false]], "Queued toggles use latest state");
-    equal(h.badges(), [[LEFT, "ON"], [LEFT, "OFF"]], "Serialized badges");
+    equal(h.icons().filter(([id]) => id === LEFT), [[LEFT, "active"], [LEFT, "inactive"]], "Serialized icon states");
   });
   test("missing content recovers by injecting queue and content in order", async source => {
     let first = true;
@@ -245,6 +248,14 @@
     h.click(); await flush();
     equal(h.log.filter(e => e.kind === "script").length, 1, "Old protocol reinjected");
     equal(h.modes(), [[LEFT, true]], "Protocol 3 handshake then toggle");
+  });
+  test("every tab starts with the sleeping cat; errors keep a badge", async source => {
+    const h = harness(source, { send(id, message, env) {
+      return message.type === "cbd-status" ? { ok: true, protocol: 2, enabled: false } : env.DEFAULT;
+    } });
+    equal(h.icons()[0], [undefined, "unavailable"], "Default icon is the unavailable pose");
+    h.click(); await flush();
+    equal(h.badges(), [[LEFT, "ERR"]], "Errors still use the badge");
   });
   test("toolbar title follows the language the page reports", async source => {
     const h = harness(source, { send(id, message, env) {
@@ -292,7 +303,7 @@
   test("runtime cbd-mode notification uses sender tab only", async source => {
     const h = harness(source);
     h.request({ type: "cbd-mode", tabId: RIGHT, enabled: true, count: 42 }, { tab: tab(LEFT) });
-    await flush(); equal(h.badges(), [[LEFT, "ON"]], "Sender id wins");
+    await flush(); equal(h.icons().filter(([id]) => id === LEFT), [[LEFT, "active"]], "Sender id wins");
     assert(h.log.some(e => e.kind === "title" && e.tabId === LEFT && e.title.includes("42")), "Count included in title");
     equal(h.modes(), [], "Notification does not send a new mode command");
   });
@@ -304,19 +315,33 @@
     assert(h.badges().some(([id, text]) => id === RIGHT && text === "ERR"), "ERR shown on the ChatGPT pane");
     assert(!h.badges().some(([id]) => id === LEFT), "No badge on the unsupported clicked pane");
   });
-  test("badge uses the accent color the page reports, errors stay red", async source => {
-    const h = harness(source);
-    h.request({ type: "cbd-mode", enabled: true, count: 3, badgeColor: "#8c5afa", badgeText: "#ffffff" }, { tab: tab(LEFT) });
-    await flush();
-    const colors = () => h.log.filter(e => e.kind === "color").map(e => e.color);
-    equal(colors().at(-1), "#8c5afa", "Theme accent badge");
-    h.request({ type: "cbd-mode", enabled: false, count: 3 }, { tab: tab(LEFT) });
-    await flush();
-    equal(colors().at(-1), "#8c5afa", "Accent is remembered for later updates without colors");
+  test("the icon is tinted with the accent the page reports; the error badge stays red", async source => {
+    // A canvas that records the tint, as the service worker has OffscreenCanvas.
+    const fills = [];
+    const saved = { OffscreenCanvas: globalThis.OffscreenCanvas, fetch: globalThis.fetch, createImageBitmap: globalThis.createImageBitmap };
+    globalThis.OffscreenCanvas = class {
+      getContext() { return { drawImage() {}, fillRect() {}, getImageData: () => ({}), set fillStyle(color) { fills.push(color); } }; }
+    };
+    globalThis.fetch = async () => ({ blob: async () => ({}) });
+    globalThis.createImageBitmap = async () => ({});
+    try {
+      const h = harness(source);
+      await flush();
+      equal(fills.at(-1), "#8e8e93", "Tabs outside ChatGPT get the neutral gray");
+      h.request({ type: "cbd-mode", enabled: true, count: 3, badgeColor: "#8c5afa", badgeText: "#ffffff" }, { tab: tab(LEFT) });
+      await flush();
+      equal(fills.at(-1), "#8c5afa", "Theme accent icon");
+      h.request({ type: "cbd-mode", enabled: false, count: 3 }, { tab: tab(LEFT) });
+      await flush();
+      equal(fills.at(-1), "#8c5afa", "Accent is remembered for later updates without colors");
+      equal(h.log.filter(e => e.kind === "color").map(e => e.color).at(-1), "#b3261e", "The (error-only) badge is red");
+    } finally {
+      Object.assign(globalThis, saved);
+    }
   });
   test("invalid toolbar tab id is ignored", async source => {
     const h = harness(source); h.click({ id: undefined, windowId: 7 }); await flush();
-    equal(h.log, [], "Invalid tab must not invoke any browser operation");
+    equal(h.log.filter(e => !(e.kind === "icon" && e.tabId === undefined)), [], "Invalid tab must not invoke any browser operation");
   });
 
   test("extensions/internal/foreign/missing URLs are silent no-ops", async source => {
