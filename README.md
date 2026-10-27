@@ -1,6 +1,6 @@
 # Off the Table for ChatGPT
 
-ChatGPT 대화를 선택해 일괄 삭제하는 Chrome Manifest V3 확장 프로그램. 현재 버전: 0.13.1.
+ChatGPT 대화를 선택해 일괄 삭제하는 Chrome Manifest V3 확장 프로그램. 현재 버전: 0.13.2.
 
 ## 설치 및 업데이트
 

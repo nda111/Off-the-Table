@@ -153,10 +153,13 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
     side.dispatchEvent(new Event("pointerleave"));
     assert(sideTip().hidden, "Leaving hides it");
     // ChatGPT's own tooltip (portaled into <body>) teaches the chip its colors.
+    // Portaled deep inside the app (not straight into <body>), with the shortcut filled in later.
     const nativeTip = document.createElement("div");
-    nativeTip.innerHTML = '<div role="tooltip" style="background-color: rgb(255, 255, 255); color: rgb(13, 13, 13); border: 1px solid rgb(200, 200, 200)">'
-      + '<span>Search</span><kbd style="background-color: rgba(0, 0, 0, 0.1)">Ctrl+K</kbd></div>';
-    document.body.append(nativeTip);
+    nativeTip.innerHTML = '<div class="portal"><div><div role="tooltip" style="background-color: rgb(255, 255, 255); color: rgb(13, 13, 13); border: 1px solid rgb(200, 200, 200)">'
+      + '<span>Search</span></div></div></div>';
+    main.append(nativeTip);
+    await settle();
+    nativeTip.querySelector('[role="tooltip"]').insertAdjacentHTML("beforeend", '<kbd style="background-color: rgba(0, 0, 0, 0.1)">Ctrl+K</kbd>');
     await settle();
     const tipVar = name => sideTip().style.getPropertyValue(`--cbd-tip-${name}`);
     assert(tipVar("bg") === "rgb(255, 255, 255)" && tipVar("fg") === "rgb(13, 13, 13)" && tipVar("kbd") === "rgba(0, 0, 0, 0.1)"

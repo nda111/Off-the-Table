@@ -1,6 +1,6 @@
 // Off the Table for ChatGPT: sidebar UI and private API integration.
 (() => {
-  const VERSION = "0.13.1";
+  const VERSION = "0.13.2";
   const INSTANCE = "__cbdInstanceV2";
   // Always replace a previous instance. After an extension reload the old script is
   // orphaned but can share this world's globals, so a version check would keep a dead
@@ -375,7 +375,6 @@
     if (document.body) {
       if (!bar.isConnected) document.body.append(bar);
     }
-    watchTooltips();
     const docked = placeSideButton();
     lockHeader(docked && state.enabled);
     sideBtn.disabled = state.busy;
@@ -604,6 +603,7 @@
   function syncRoots() {
     rootsScheduled = 0;
     if (destroyed) return;
+    learnNativeTooltip();
     const roots = [...document.querySelectorAll(SIDEBAR_SELECTOR)];
     const changed = roots.length !== sidebarRoots.length || roots.some((root, i) => root !== sidebarRoots[i]);
     if (changed) {
@@ -1171,15 +1171,19 @@
 
   // Chip tooltip under the sidebar switch, styled like ChatGPT's own (label + shortcut).
   // It replaces the native title, which would show a second, unstyled tooltip.
-  // The chip copies ChatGPT's own tooltip: whenever one appears (it is portaled straight
-  // into <body>), its colors are read and remembered per light/dark mode, so the chip
+  // The chip copies ChatGPT's own tooltip: whenever one appears, its colors are read and
+  // remembered per light/dark mode, so the chip
   // matches in both modes and follows redesigns. Until then the light-mode values apply.
+  // ChatGPT's tooltip colors as measured; learned values (same shape) take precedence.
+  const TIP_DEFAULTS = {
+    light: { bg: "#0d0d0d", fg: "#fff", border: "1px solid rgba(255, 255, 255, .05)", shadow: "0 8px 18px rgba(15, 23, 42, .2)", kbd: "rgba(255, 255, 255, .25)" },
+    dark: { bg: "rgb(48, 48, 48)", fg: "rgb(237, 237, 237)", border: "1px solid rgba(237, 237, 237, .05)", shadow: "0 8px 18px rgba(15, 23, 42, .2)", kbd: "rgba(237, 237, 237, .25)" },
+  };
   function applyTipStyle() {
-    const style = learnedTips[pageLight ? "light" : "dark"];
-    for (const name of ["bg", "fg", "border", "shadow", "kbd"]) {
-      if (style?.[name]) sideTip.style.setProperty(`--cbd-tip-${name}`, style[name]);
-      else sideTip.style.removeProperty(`--cbd-tip-${name}`);
-    }
+    const mode = pageLight ? "light" : "dark";
+    const learned = Object.fromEntries(Object.entries(learnedTips[mode] || {}).filter(([, value]) => value));
+    const style = { ...TIP_DEFAULTS[mode], ...learned };
+    for (const [name, value] of Object.entries(style)) sideTip.style.setProperty(`--cbd-tip-${name}`, value);
   }
   function learnTipStyle(tip) {
     const box = view.getComputedStyle(tip), kbd = tip.querySelector("kbd");
@@ -1196,19 +1200,12 @@
     try { view.localStorage.setItem(TIP_STORAGE, JSON.stringify(learnedTips)); } catch { /* storage blocked */ }
     applyTipStyle();
   }
-  const tipWatcher = new MutationObserver(records => {
-    for (const record of records) for (const node of record.addedNodes) {
-      if (node.nodeType !== 1 || node === sideTip) continue;
-      const tip = node.matches?.('[role="tooltip"]') ? node : node.querySelector?.('[role="tooltip"]');
-      if (tip && !tip.closest(".cbd-tip, .cbd-bar")) learnTipStyle(tip);
-    }
-  });
-  let tipWatchedBody = null;
-  function watchTooltips() {
-    if (!document.body || tipWatchedBody === document.body) return;
-    tipWatcher.disconnect();
-    tipWatcher.observe(document.body, { childList: true });
-    tipWatchedBody = document.body;
+  // Called from syncRoots, at most once per frame with DOM changes. ChatGPT portals its
+  // tooltips to different containers, and fills the shortcut in after the box appears,
+  // so the live tooltip is looked up (and re-read) wherever it is.
+  function learnNativeTooltip() {
+    const tip = document.querySelector('[role="tooltip"]:not(.cbd-tip)');
+    if (tip && !tip.closest(".cbd-bar")) learnTipStyle(tip);
   }
   function renderSideTip() {
     setText(sideTipLabel, t("sideTitle"));
@@ -1383,7 +1380,6 @@
     for (const node of document.querySelectorAll("[data-cbd-fade]")) delete node.dataset.cbdFade;
     sideBtn.remove();
     clearTimeout(sideTipTimer);
-    tipWatcher.disconnect();
     sideTip.remove();
     barResize?.disconnect();
     if (globalThis[INSTANCE]?.destroy === destroy) delete globalThis[INSTANCE];
