@@ -156,6 +156,22 @@ a[data-cbd="vanishing"], [data-cbd-row="vanishing"] {
   color: var(--cbd-accent-text, var(--cbd-accent, currentColor)) !important;
 }
 .cbd-side-switch svg { display: block; }
+/* Tooltip chip under the sidebar switch, matching ChatGPT's (Tooltip/ShortcutLayout). */
+.cbd-tip {
+  position: fixed !important; left: var(--cbd-tip-left, 0) !important; top: var(--cbd-tip-top, 0) !important;
+  z-index: 2147483647 !important; pointer-events: none !important;
+  display: flex !important; align-items: center; gap: 8px;
+  max-width: min(320px, calc(100vw - 16px)); box-sizing: border-box;
+  padding: 5px 12px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, .05);
+  background: #0d0d0d; color: #fff; box-shadow: 0 8px 18px rgba(15, 23, 42, .2);
+  font: 600 14px/18px -apple-system-body, ui-sans-serif, -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+  white-space: nowrap; animation: cbd-tip-in var(--cbd-dur-hover) ease-out;
+}
+.cbd-tip[hidden] { display: none !important; }
+.cbd-tip kbd {
+  padding: 0 6px; border-radius: 8px; background: rgba(255, 255, 255, .25); color: inherit; font: inherit;
+}
+@keyframes cbd-tip-in { from { opacity: 0; transform: translateY(-2px); } }
 /* Search and sidebar toggle while delete mode is ON. */
 /* Locked controls (and the row drawn around overlay buttons) look disabled: dimmed and
    desaturated, with no pointer interaction, so ChatGPT's hover styles and hover
@@ -171,7 +187,7 @@ a[data-cbd="vanishing"], [data-cbd-row="vanishing"] {
 
 
 @media (prefers-reduced-motion: reduce) {
-  .cbd-bar, .cbd-bar *, .cbd-side-switch, a[data-cbd], [data-cbd-row], [data-cbd-shift], [data-cbd-fade], [data-cbd-disabled], [data-cbd-lock-area],
+  .cbd-bar, .cbd-bar *, .cbd-side-switch, .cbd-tip, a[data-cbd], [data-cbd-row], [data-cbd-shift], [data-cbd-fade], [data-cbd-disabled], [data-cbd-lock-area],
   [data-cbd-item] {
     animation: none !important; transition: none !important;
   }

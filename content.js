@@ -1,6 +1,6 @@
 // Off the Table for ChatGPT: sidebar UI and private API integration.
 (() => {
-  const VERSION = "0.12.0";
+  const VERSION = "0.13.0";
   const INSTANCE = "__cbdInstanceV2";
   // Always replace a previous instance. After an extension reload the old script is
   // orphaned but can share this world's globals, so a version check would keep a dead
@@ -209,6 +209,13 @@
   // without exposing them) and filled with currentColor so it follows the button's color.
   const CAT_ICON = '<svg aria-hidden="true" width="20" height="20" fill="currentColor" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><g transform="matrix(1,0,0,1,0,-550)"><g><g transform="matrix(4.747532,0,0,4.747532,11.289067,861.049802)"><path d="M57.905,5.917L0,5.917L0,0L66.186,0L66.186,5.917L63.822,5.917L63.822,17.491L57.905,17.491L57.905,5.917Z"/></g><g transform="matrix(4.747532,0,0,4.747532,11.289067,557.298884)"><path d="M13.172,63.981L5.536,63.981C6.195,63.429 6.966,62.41 7.643,61.256C9.003,58.939 9.983,56.078 8.91,55.361C-7.628,44.322 3.583,28.731 5.369,28.29C9.812,27.193 7.423,32.746 7.259,33.128C1.77,45.881 10.555,51.77 11.931,49.804C16.868,42.747 15.284,40.342 31.138,34.256C33.707,33.27 35.654,27.206 42.499,22.259C49.007,17.556 45.704,25.494 47.245,25.661C48.089,25.752 49.766,25.432 51.007,26.816C54.511,27.666 62.004,17.491 57.568,28.507C55.285,34.178 57.215,34.715 54.854,40.349C53.893,42.645 54.517,42.395 52.085,43.61C50.13,44.587 45.635,42.549 44.626,43.495C41.951,46.002 65.662,44.859 67.706,50.017C71.242,58.941 40.193,43.877 35.77,53.006C36.76,54.081 42.371,56.621 36.248,60.424C35.167,62.073 38.374,61.263 40.356,62.845C40.75,63.159 40.746,63.7 40.679,63.981L27.181,63.981C28.002,61.983 28.22,58.167 21.86,56.312C18.024,57.627 17.927,56.791 14.725,60.48C13.341,62.075 12.915,63.199 13.172,63.981ZM45.31,31.364C46.514,31.364 47.492,32.341 47.492,33.545C47.492,34.749 46.514,35.726 45.31,35.726C44.106,35.726 43.129,34.749 43.129,33.545C43.129,32.341 44.106,31.364 45.31,31.364ZM52.168,33.545C53.129,33.545 53.91,34.325 53.91,35.286C53.91,36.248 53.129,37.028 52.168,37.028C51.207,37.028 50.426,36.248 50.426,35.286C50.426,34.325 51.207,33.545 52.168,33.545Z"/></g><g transform="matrix(4.747532,0,0,4.747532,11.289067,556.839798)"><path d="M57.746,42.415C57.443,42.801 56.883,42.868 56.497,42.565C56.111,42.261 56.044,41.701 56.348,41.315C56.348,41.315 58.226,38.7 64.136,40.089C64.614,40.201 64.911,40.68 64.799,41.158C64.686,41.636 64.207,41.933 63.729,41.821C59.222,40.762 57.746,42.415 57.746,42.415Z"/></g><g transform="matrix(4.747532,0,0,4.747532,11.289067,519.926785)"><path d="M58.886,46.529C58.594,46.924 58.036,47.006 57.642,46.714C57.248,46.422 57.165,45.864 57.457,45.47C57.457,45.47 59.742,42.337 64.069,43.005C64.554,43.08 64.887,43.534 64.812,44.02C64.737,44.505 64.282,44.838 63.797,44.763C60.597,44.269 58.886,46.529 58.886,46.529Z"/></g><g transform="matrix(4.747532,0,0,4.747532,11.289067,554.26806)"><path d="M74.767,45.271C71.891,42.576 71.945,42.657 68.861,40.126C60.016,32.866 75.737,41.756 78.142,46.864C79.262,49.244 74.991,45.469 74.767,45.271Z"/></g><g transform="matrix(2.328508,-4.137284,-4.137284,-2.328508,361.259585,1174.225832)"><path d="M79.688,39.586C79.465,39.143 75.729,31.698 75.78,34.777C75.794,35.624 79.351,43.629 79.688,44.388C80.183,45.503 81.455,44.91 81.261,43.956C81.186,43.592 81.054,42.942 79.688,39.586Z"/></g><g transform="matrix(4.747532,0,0,4.747532,11.289067,613.402848)"><path d="M69.545,35.025C69.191,34.904 62.044,32.474 65.818,32.21C67.303,32.107 73.913,34.68 74.443,35.919C75.141,37.547 69.908,35.188 69.545,35.025Z"/></g><g transform="matrix(4.747532,0,0,4.747532,11.289067,791.474426)"><path d="M85.155,30.472C82.745,28.846 82.843,28.825 80.456,27.2C76.904,24.782 76.934,24.844 73.358,22.41C72.335,21.714 71.348,20.964 71.704,19.714C71.903,19.012 83.276,1.978 83.668,1.461C85.19,-0.542 85.855,0.638 98.026,8.938C102.996,12.328 100.114,13.755 94.113,22.858C89.216,30.286 89.222,32.687 85.155,30.472ZM75.207,19.3L81.894,24.079C82.238,24.325 82.717,24.245 82.963,23.901C83.209,23.556 83.129,23.077 82.785,22.831L76.098,18.052C75.754,17.806 75.275,17.886 75.028,18.23C74.782,18.575 74.862,19.054 75.207,19.3ZM77.139,16.837L87.273,24.079C87.618,24.325 88.097,24.245 88.343,23.901C88.589,23.556 88.51,23.077 88.165,22.831L78.031,15.589C77.687,15.343 77.208,15.423 76.961,15.767C76.715,16.111 76.795,16.591 77.139,16.837ZM92.11,8.05C95.668,10.928 97.24,14.893 95.618,16.899C94.761,17.958 93.183,18.26 91.361,17.885C91.074,17.826 89.68,19.883 89.68,19.883C89.68,19.883 89.676,17.379 89.265,17.195C88.25,16.743 87.216,16.113 86.232,15.316C82.674,12.438 81.102,8.473 82.724,6.468C84.346,4.462 88.552,5.171 92.11,8.05Z"/></g></g></g></svg>';
   const sideBtn = el("button", { type: "button", "aria-pressed": "false" });
+  // Chip tooltip for the switch (see renderSideTip); built here because labels are applied early.
+  const sideTipLabel = el("span");
+  const sideTipKeys = el("kbd");
+  const sideTip = el("div", { className: "cbd-tip", id: "cbd-side-tip", role: "tooltip", hidden: true }, [sideTipLabel, sideTipKeys]);
+  sideBtn.setAttribute("aria-describedby", "cbd-side-tip");
+  let sideTipTimer = 0;
+
   const sideInner = el("span");
   sideInner.innerHTML = CAT_ICON;
   sideBtn.append(sideInner);
@@ -306,7 +313,7 @@
     deleteBtn.title = t("deleteSelected");
     setText(cancelDeleteBtn, t("cancel"));
     setText(confirmDeleteBtn, t("delete"));
-    sideBtn.title = t("sideTitle");
+    renderSideTip();
     twoLabels(selectAllBtn, [t("selectAll"), t("clearAll")]);
   }
   applyLanguage();
@@ -368,6 +375,7 @@
     sideBtn.disabled = state.busy;
     sideBtn.setAttribute("aria-pressed", String(state.enabled));
     sideBtn.setAttribute("aria-label", t(state.enabled ? "sideTurnOff" : "sideTurnOn"));
+    renderSideTip();
     setShown(bar, state.enabled);
     if (state.enabled) { observeMain(); placeBar(); }
     // Lets the stylesheet hide ChatGPT's hover actions while in delete mode. Re-applied
@@ -1153,6 +1161,40 @@
     catch (error) { state.message = error.message; render(); }
   }
   listen(sideBtn, "click", toggleFromPage);
+
+  // Chip tooltip under the sidebar switch, styled like ChatGPT's own (label + shortcut).
+  // It replaces the native title, which would show a second, unstyled tooltip.
+  function renderSideTip() {
+    setText(sideTipLabel, t(state.enabled ? "sideTurnOff" : "sideTurnOn"));
+    setText(sideTipKeys, toggleKeys());
+    if (!sideTip.hidden) placeSideTip();
+  }
+  function placeSideTip() {
+    const anchor = sideBtn.getBoundingClientRect(), tip = sideTip.getBoundingClientRect();
+    const left = Math.min(Math.max(8, anchor.left + anchor.width / 2 - tip.width / 2), view.innerWidth - tip.width - 8);
+    sideTip.style.setProperty("--cbd-tip-left", `${Math.round(left)}px`);
+    sideTip.style.setProperty("--cbd-tip-top", `${Math.round(anchor.bottom + 6)}px`);
+  }
+  function showSideTip(delay) {
+    clearTimeout(sideTipTimer);
+    sideTipTimer = setTimeout(() => {
+      if (!sideBtn.isConnected || !document.body) return;
+      if (!sideTip.isConnected) document.body.append(sideTip);
+      renderSideTip();
+      sideTip.hidden = false;
+      placeSideTip();
+    }, delay);
+  }
+  function hideSideTip() {
+    clearTimeout(sideTipTimer);
+    sideTip.hidden = true;
+  }
+  listen(sideBtn, "pointerenter", event => { if (event.pointerType !== "touch") showSideTip(300); });
+  listen(sideBtn, "pointerleave", hideSideTip);
+  listen(sideBtn, "pointerdown", hideSideTip);
+  listen(sideBtn, "focus", () => { if (sideBtn.matches(":focus-visible")) showSideTip(0); });
+  listen(sideBtn, "blur", hideSideTip);
+  listen(view, "scroll", hideSideTip, true);
   listen(selectAllBtn, "click", () => {
     if (state.busy) return;
     refresh({ notify: false });
@@ -1294,6 +1336,8 @@
     lockHeader(false);
     for (const node of document.querySelectorAll("[data-cbd-fade]")) delete node.dataset.cbdFade;
     sideBtn.remove();
+    clearTimeout(sideTipTimer);
+    sideTip.remove();
     barResize?.disconnect();
     if (globalThis[INSTANCE]?.destroy === destroy) delete globalThis[INSTANCE];
   }

@@ -141,6 +141,17 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
     assert(side && side.nextElementSibling === header.querySelector(".tip") && side.classList.contains("Button-q")
       && side.dataset.variant === "transparent" && side.firstElementChild.className === "ButtonInner-U" && side.querySelector("svg"),
       "The trash switch sits left of search and borrows its classes");
+    // Chip tooltip like ChatGPT's: label plus shortcut, after a short hover delay.
+    assert(!side.hasAttribute("title"), "No native title tooltip on the switch");
+    side.dispatchEvent(new Event("pointerenter"));
+    const sideTip = () => document.getElementById("cbd-side-tip");
+    assert(!sideTip() || sideTip().hidden, "The tooltip waits before showing");
+    await new Promise(resolve => setTimeout(resolve, 350));
+    assert(sideTip() && !sideTip().hidden && sideTip().querySelector("span").textContent === "삭제 모드 켜기"
+      && sideTip().querySelector("kbd").textContent === "Ctrl+D" && side.getAttribute("aria-describedby") === "cbd-side-tip",
+      "Hovering shows the chip with the action and Ctrl+D");
+    side.dispatchEvent(new Event("pointerleave"));
+    assert(sideTip().hidden, "Leaving hides it");
     side.click();
     assert(status().enabled && side.getAttribute("aria-pressed") === "true", "The sidebar switch turns delete mode ON");
     const barStyle = document.querySelector(".cbd-bar").style;
