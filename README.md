@@ -66,7 +66,6 @@ ChatGPT 대화를 선택해 일괄 삭제하는 Chrome Manifest V3 확장 프로
 - manifest.json: 확장 설정과 스크립트 로드 순서
 - background.js: 아이콘 직접 토글, 연결 확인, 주입 복구, 툴바 아이콘(상태별·테마 색)과 오류 배지 갱신
 - icons/: 대표 아이콘과 툴바 상태 아이콘(투명 배경 검은 단색, 실행 중에 색을 입힘)
-- icons/trash.svg: 사이드바 버튼·패널 삭제 버튼 아이콘의 원본. 수정한 뒤 `python3 tools/embed-icon.py`를 실행하면 content.js에 반영됩니다(테마 색을 따르도록 색 지정은 제거됨).
 - content.js: 사이드바 감지, 선택 UI, 인증 및 삭제 API 연결
 - delete-queue.js: 동시 삭제 큐와 요청 제한 처리
 - i18n.js: 언어별 문구와 복수형 처리
