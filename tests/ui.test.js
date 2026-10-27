@@ -147,7 +147,7 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
     const sideTip = () => document.getElementById("cbd-side-tip");
     assert(!sideTip() || sideTip().hidden, "The tooltip waits before showing");
     await new Promise(resolve => setTimeout(resolve, 350));
-    assert(sideTip() && !sideTip().hidden && sideTip().querySelector("span").textContent === "삭제 모드 켜기"
+    assert(sideTip() && !sideTip().hidden && sideTip().querySelector("span").textContent === "삭제 모드 켜기/끄기"
       && sideTip().querySelector("kbd").textContent === "Ctrl+D" && side.getAttribute("aria-describedby") === "cbd-side-tip",
       "Hovering shows the chip with the action and Ctrl+D");
     side.dispatchEvent(new Event("pointerleave"));
