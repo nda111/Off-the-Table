@@ -462,6 +462,39 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, userAge
     await settle();
     assert(!v2.dataset.cbdRow && v2.style.translate === "" && !document.querySelector("[data-cbd-shift]"),
       "After a refetch the reused row is shown and no row is shifted twice");
+    // Shift+End / Shift+Home ranges from the last operated chat, including rows a
+    // virtualized list has unmounted.
+    const edgeRows = ["z1", "z2", "z3", "z4"].map(id => {
+      const row = document.createElement("div");
+      row.innerHTML = `<div role="group" class="sidebar-item" data-sidebar-cycle-item=""><a href="/c/${id}">${id}</a></div>`;
+      nav.append(row);
+      return row;
+    });
+    await settle();
+    if (status().selected) selectionButton().click();
+    const edgeKey = key => document.dispatchEvent(new KeyboardEvent("keydown", { key, shiftKey: true, bubbles: true, cancelable: true }));
+    const edgeSelected = () => edgeRows.map(row => row.querySelector('[role="group"]').dataset.cbdItem === "selected");
+    edgeRows[3].remove();
+    await settle();
+    edgeRows[1].querySelector("a").click();
+    edgeKey("End");
+    assert(edgeSelected().join() === "false,true,true,false" && status().selected === 3,
+      "Shift+End selects from the anchor to the end, including a remembered unmounted row");
+    nav.append(edgeRows[3]);
+    await settle();
+    assert(edgeSelected()[3], "The unmounted row shows as selected when it comes back");
+    edgeRows[2].querySelector("a").click();
+    edgeKey("End");
+    assert(edgeSelected().join() === "false,true,false,false", "A deselected anchor clears to the end instead");
+    if (status().selected) selectionButton().click();
+    edgeRows[0].querySelector("a").click();
+    edgeKey("Home");
+    const beforeZ1 = status().count - 3;
+    assert(status().selected === beforeZ1 && edgeSelected().join() === "true,false,false,false",
+      "Shift+Home selects from the start of the list to the anchor");
+    selectionButton().click();
+    edgeRows.forEach(row => row.remove());
+    await settle();
     // Codex tasks: /remote/task_… links, deleted with DELETE /backend-api/wham/tasks/<id>.
     const codexRow = document.createElement("div");
     codexRow.setAttribute("role", "listitem");

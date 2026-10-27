@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChatGPT Bulk Delete",
-  "version": "0.9.3",
+  "version": "0.10.0",
   "description": "ChatGPT 대화를 골라서 한 번에 삭제합니다.",
   "permissions": [
     "activeTab",

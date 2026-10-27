@@ -1,6 +1,6 @@
 // ChatGPT Bulk Delete: sidebar UI and private API integration.
 (() => {
-  const VERSION = "0.9.3";
+  const VERSION = "0.10.0";
   const INSTANCE = "__cbdInstanceV2";
   // Always replace a previous instance. After an extension reload the old script is
   // orphaned but can share this world's globals, so a version check would keep a dead
@@ -35,6 +35,9 @@
   const state = {
     enabled: false, busy: false,
     known: new Set(), selected: new Set(), deleted: new Set(),
+    // Sidebar order of every chat seen this session, including rows a virtualized list
+    // has since unmounted, so "to the end" ranges also cover chats scrolled out of view.
+    order: [],
     vanishing: new Set(), // deleted just now; collapsing before being hidden
     slots: new Map(), // deleted id -> { container, y, h } for absolutely positioned rows
     anchorId: null, anchorValue: true,
@@ -154,6 +157,8 @@
     ["클릭", "대화 선택 / 해제"],
     ["드래그", "범위를 누른 대화의 새 상태로 칠하기"],
     ["Shift+클릭", "마지막으로 조작한 대화부터 범위 선택"],
+    ["Shift+End", "마지막으로 조작한 대화부터 목록 끝(오래된 대화)까지"],
+    ["Shift+Home", "마지막으로 조작한 대화부터 목록 처음까지"],
     ["Ctrl+A", "목록의 대화 전체 선택"],
     ["Esc", "선택 해제, 한 번 더 누르면 삭제 모드 종료"],
     ["Delete", "선택 삭제"],
@@ -385,7 +390,9 @@
       const links = [...row.querySelectorAll(CHAT_LINK_SELECTOR)];
       if (!links.some(a => state.deleted.has(chatId(a)))) delete row.dataset.cbdRow;
     }
-    for (const { a, id } of chatLinks()) {
+    const links = chatLinks();
+    if (state.enabled) mergeOrder(links.map(item => item.id));
+    for (const { a, id } of links) {
       markRow(a, id);
       if (!state.enabled) continue;
       // Detected chats are counted per delete-mode session: the mode menu is locked while
@@ -551,7 +558,7 @@
     if (on) applyTheme();
     // Turning the mode off discards the selection and detected count, so a later ON
     // (possibly in the other ChatGPT/Codex mode) starts clean.
-    if (!on) { state.selected.clear(); state.known.clear(); state.confirming = 0; setHelpOpen(false); }
+    if (!on) { state.selected.clear(); state.known.clear(); state.order = []; state.confirming = 0; setHelpOpen(false); }
     if (!on) undecorate();
     refresh();
   }
@@ -860,6 +867,33 @@
     state.message = "";
     refresh();
   }
+  // Fits the rendered sequence into the remembered order: an unseen ID goes right after
+  // the rendered row above it (or before the one below it, for the first rows).
+  function mergeOrder(ids) {
+    const order = state.order;
+    let position = new Map(order.map((id, i) => [id, i]));
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      if (position.has(id)) continue;
+      const prev = ids.slice(0, i).reverse().find(other => position.has(other));
+      const next = prev === undefined ? ids.slice(i + 1).find(other => position.has(other)) : undefined;
+      const at = prev !== undefined ? position.get(prev) + 1 : next !== undefined ? position.get(next) : order.length;
+      order.splice(at, 0, id);
+      position = new Map(order.map((other, j) => [other, j]));
+    }
+  }
+  // Shift+End / Shift+Home: from the last operated chat to the end (older chats) or the
+  // start of the list, applying that chat's state like a Shift+click range.
+  function chooseToEdge(toEnd) {
+    if (state.busy) return;
+    const order = state.order.filter(id => !state.deleted.has(id) && state.known.has(id));
+    const from = order.indexOf(state.anchorId);
+    if (from < 0) { state.message = "먼저 기준이 될 대화를 클릭하세요."; render(); return; }
+    const ids = toEnd ? order.slice(from) : order.slice(0, from + 1);
+    for (const id of ids) select(id, state.anchorValue);
+    state.message = "";
+    refresh();
+  }
   function selectAll() {
     refresh({ notify: false });
     for (const id of state.known) state.selected.add(id);
@@ -1062,6 +1096,8 @@
       if (state.confirming) cancelDelete();
       else if (state.selected.size) { if (!state.busy) clearSelection(); }
       else if (!state.busy) setEnabled(false);
+    } else if ((event.key === "End" || event.key === "Home") && event.shiftKey && !mod && !event.altKey) {
+      chooseToEdge(event.key === "End");
     } else if (event.key === "Delete" && !mod) {
       if (state.confirming) confirmDeleteBtn.click();
       else if (!deleteBtn.disabled) deleteBtn.click();
