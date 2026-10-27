@@ -172,7 +172,7 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, userAge
     mode(true);
     const helpBtn = document.querySelector(".cbd-help-btn"), helpTip = document.querySelector(".cbd-help-tip");
     assert(helpBtn && helpTip && !document.querySelector(".cbd-hint") && helpBtn.closest(".cbd-summary")
-      && helpTip.textContent.includes("Shift+클릭") && helpTip.textContent.includes("최대 2개"), "Usage help lives in a ? tooltip on the panel's top row");
+      && helpTip.textContent.includes("Shift+클릭") && helpTip.textContent.includes("최대 3개"), "Usage help lives in a ? tooltip on the panel's top row");
     helpBtn.click();
     assert(helpBtn.getAttribute("aria-expanded") === "true" && "open" in helpBtn.parentElement.dataset, "Clicking ? pins the tooltip open");
     document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
@@ -374,8 +374,8 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, userAge
     assert(confirmBox.hidden && status().selected === 5 && status().enabled, "Esc cancels the confirmation first, keeping the selection");
     deleteButton().click();
     confirmButtons()[1].click();
-    await until(() => pendingResponses.length === 2);
-    assert(peak === 2 && requestCount === 2 && status().busy, "Deletion starts exactly two concurrent requests");
+    await until(() => pendingResponses.length === 3);
+    assert(peak === 3 && requestCount === 3 && status().busy, "Deletion starts exactly three concurrent requests");
     assert([...document.querySelectorAll(".cbd-bar button:not(.cbd-help-btn)")].every(node => node.disabled)
       && !document.querySelector(".cbd-help-btn").disabled, "Selection controls are disabled while deleting; help stays usable");
     const blocked = mode(false);
@@ -383,7 +383,7 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, userAge
     autoRelease = true;
     pendingResponses.splice(0).forEach(release => release());
     await until(() => !status().busy);
-    assert(peak === 2 && requestCount === 5, "Queue completes all items without exceeding two in flight");
+    assert(peak === 3 && requestCount === 5, "Queue completes all items without exceeding three in flight");
     assert(status().selected === 1 && status().count === 1, "Successful deletions leave only failed items selected and detected");
     assert(/^\d+개 삭제 완료 · 실패 1개/.test(document.querySelector(".cbd-feedback").textContent), "The result reads \"N개 삭제 완료\" plus the failure count");
     const hiddenRows = () => [...nav.querySelectorAll("a")].filter(a => ["deleted", "vanishing"].includes(a.dataset.cbd));

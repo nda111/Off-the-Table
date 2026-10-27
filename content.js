@@ -1,6 +1,6 @@
 // ChatGPT Bulk Delete: sidebar UI and private API integration.
 (() => {
-  const VERSION = "0.10.0";
+  const VERSION = "0.10.1";
   const INSTANCE = "__cbdInstanceV2";
   // Always replace a previous instance. After an extension reload the old script is
   // orphaned but can share this world's globals, so a version check would keep a dead
@@ -10,7 +10,7 @@
   try { globalThis[INSTANCE]?.destroy?.(); } catch { /* already invalidated */ }
   try { delete globalThis[INSTANCE]; } catch { /* ignore */ }
 
-  const DELETE_CONCURRENCY = 2;
+  const DELETE_CONCURRENCY = 3;
   const DELETE_DELAY_MS = 500;
   // Deleting this many chats or more asks for confirmation inside the panel first.
   const CONFIRM_AT = 5;
