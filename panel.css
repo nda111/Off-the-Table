@@ -1,0 +1,176 @@
+/* Theme tokens (--cbd-accent, --cbd-on-accent, --cbd-surface, --cbd-text) are written
+   by content.js from the page's own colors; the fallbacks only cover the first frame. */
+/* Selection tint on ChatGPT's own rounded row. */
+/* Fade durations: toggles and entrances, hovers, and exits (keep LEAVE_MS in
+   content.js equal to --cbd-dur-out). */
+:root { --cbd-dur: .2s; --cbd-dur-hover: .16s; --cbd-dur-out: .18s; }
+/* Selecting and unselecting both fade the tint (the mark stays as "" when unselected). */
+[data-cbd-item] { transition: background-color var(--cbd-dur) ease !important; }
+[data-cbd-item="selected"] {
+  background-color: color-mix(in srgb, var(--cbd-accent, currentColor) var(--cbd-tint, 24%), transparent) !important;
+}
+[data-cbd-item="selected"]:hover {
+  background-color: color-mix(in srgb, var(--cbd-accent, currentColor) var(--cbd-tint-hover, 32%), transparent) !important;
+}
+[data-cbd-item][data-pop="a"] { animation: cbd-press-a .2s ease-out; }
+[data-cbd-item][data-pop="b"] { animation: cbd-press-b .2s ease-out; }
+/* Two identical keyframes: switching the name restarts the animation without a reflow. */
+@keyframes cbd-press-a { 40% { transform: scale(.97); } }
+@keyframes cbd-press-b { 40% { transform: scale(.97); } }
+@keyframes cbd-pop-a { 40% { transform: scale(1.35); } }
+@keyframes cbd-pop-b { 40% { transform: scale(1.35); } }
+/* Delete mode: no "chat actions"/"pin" buttons on hover. Inside a chat's row every
+   block that does not contain the chat link is ChatGPT's trailing action area. */
+html[data-cbd-mode] [data-cbd-item] div:not(:has(a)) { display: none !important; }
+/* Stripped chat links (no href) keep the link cursor. */
+a[data-cbd-href] { cursor: pointer !important; }
+a[data-cbd] { transition: background-color .18s ease, opacity .2s ease; }
+/* Deleted chats collapse, then stay hidden until ChatGPT drops them from its list. */
+a[data-cbd="deleted"], [data-cbd-row="deleted"] { display: none !important; }
+a[data-cbd="vanishing"], [data-cbd-row="vanishing"] {
+  overflow: hidden !important; pointer-events: none !important;
+  animation: cbd-row-out .26s ease-in forwards;
+}
+/* Rows below a deleted slot in a virtualized list slide up into the gap. */
+[data-cbd-shift] { transition: translate .26s ease !important; }
+@keyframes cbd-row-out {
+  from { opacity: .6; max-height: 64px; }
+  to { opacity: 0; max-height: 0; padding-block: 0; margin-block: 0; }
+}
+.cbd-bar {
+  /* Top-left of the chat area; content.js keeps these in step with ChatGPT's <main>. */
+  position: fixed !important; left: var(--cbd-bar-left, 16px) !important; top: var(--cbd-bar-top, 64px) !important;
+  right: auto !important; bottom: auto !important;
+  z-index: 2147483647 !important;
+  display: flex !important; flex-direction: column !important; align-items: stretch !important;
+  --cbd-pad: 16px; --cbd-line: 19.5px; /* 13px text at line-height 1.5 */
+  gap: 12px !important; padding: var(--cbd-pad) 18px !important;
+  /* A steady width: counts and result messages wrap inside instead of resizing the panel. */
+  /* 236px leaves 200px inside: two ~96px action buttons, the status line and the "?". */
+  width: 236px; max-width: calc(100vw - 40px); box-sizing: border-box;
+  border: 1px solid var(--cbd-border, color-mix(in srgb, var(--cbd-text, #111) 12%, transparent)); border-radius: 12px;
+  background: var(--cbd-raised, var(--cbd-surface, #fff)) !important; color: var(--cbd-text, #111) !important;
+  font-family: system-ui, sans-serif !important; font-size: 13px !important; line-height: 1.5 !important;
+  box-shadow: var(--cbd-shadow-lg, 0 8px 28px rgba(0, 0, 0, .28)) !important;
+}
+.cbd-bar[hidden], .cbd-bar [hidden] { display: none !important; }
+/* Entering replays on every hidden -> shown switch; leaving keeps it on screen briefly. */
+.cbd-bar:not([hidden]) { animation: cbd-bar-in var(--cbd-dur) cubic-bezier(.2, .8, .3, 1); }
+.cbd-bar[hidden][data-cbd-leaving] {
+  display: flex !important; pointer-events: none !important;
+  animation: cbd-bar-out var(--cbd-dur-out) ease-in forwards;
+}
+/* Drops in from above, matching its place under the chat header. */
+@keyframes cbd-bar-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+@keyframes cbd-bar-out { to { opacity: 0; transform: translateY(-6px) scale(.98); } }
+.cbd-bar button { transition: background-color var(--cbd-dur-hover) ease, color var(--cbd-dur-hover) ease, opacity var(--cbd-dur-hover) ease, transform .1s ease !important; }
+.cbd-bar button:not(:disabled):active { transform: scale(.96); }
+/* Status line: plain text, theme color only on the numbers. */
+.cbd-summary-text { font-weight: 500; }
+.cbd-num { display: inline-block; font-weight: 700; color: var(--cbd-accent-text, var(--cbd-accent, #d93025)); }
+.cbd-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.cbd-summary, .cbd-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cbd-actions { gap: 8px; flex-wrap: nowrap; }
+/* The two main actions split the row evenly. */
+.cbd-bar > .cbd-actions > button { flex: 1 1 0; }
+.cbd-bar button {
+  padding: 6px 12px; border: none; border-radius: 999px;
+  background: color-mix(in srgb, var(--cbd-text, #111) 9%, transparent); color: inherit;
+  font: inherit; cursor: pointer;
+}
+.cbd-bar button:not(:disabled):hover { background: color-mix(in srgb, var(--cbd-text, #111) 15%, transparent); }
+.cbd-bar button:disabled { opacity: .45; cursor: default; }
+/* Two-state buttons: both labels stacked in one cell, so the width never changes. */
+.cbd-bar .cbd-two-labels { display: inline-grid; }
+.cbd-two-labels > .cbd-label { grid-area: 1 / 1; text-align: center; }
+.cbd-two-labels > .cbd-label:not([data-cbd-active]) { visibility: hidden; }
+/* Icon + count; the row keeps both buttons at the same width as before. */
+.cbd-bar .cbd-delete { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+.cbd-delete svg { width: 16px; height: 16px; flex: none; }
+.cbd-delete-count { display: inline-block; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cbd-delete-count[data-pop="a"] { animation: cbd-pop-a .22s ease-out; }
+.cbd-delete-count[data-pop="b"] { animation: cbd-pop-b .22s ease-out; }
+.cbd-bar .cbd-danger { background: var(--cbd-accent, #d93025); color: var(--cbd-on-accent, #fff); }
+.cbd-bar .cbd-danger:not(:disabled):hover { background: color-mix(in srgb, var(--cbd-accent, #d93025) 85%, var(--cbd-text, #111)); }
+.cbd-feedback { color: color-mix(in srgb, var(--cbd-text, #111) var(--cbd-muted, 65%), transparent); overflow-wrap: anywhere; }
+/* In-panel delete confirmation for larger selections. */
+.cbd-confirm { display: flex; flex-direction: column; gap: 10px; }
+.cbd-confirm[hidden] { display: none !important; }
+.cbd-confirm:not([hidden]) { animation: cbd-confirm-in var(--cbd-dur-hover) ease-out; }
+@keyframes cbd-confirm-in { from { opacity: 0; transform: translateY(-4px); } }
+.cbd-confirm-text { margin: 0; font-weight: 600; }
+.cbd-confirm .cbd-actions { justify-content: flex-end; }
+/* "?" help button at the panel's top-right and its tooltip, laid out below the panel. */
+/* Tucked into the panel's top-right corner (relative to the fixed panel; .cbd-help
+   itself stays static so the tooltip is also laid out against the panel). */
+.cbd-summary { padding-right: 22px; }
+.cbd-bar .cbd-help-btn:not(:disabled):hover { background: transparent !important; }
+.cbd-bar .cbd-help-btn {
+  /* Centered on the status line and flush with the panel's inner edge, so it stays
+     put even when the status wraps. */
+  --cbd-help-size: 13px;
+  position: absolute; right: 18px; top: calc(var(--cbd-pad) + (var(--cbd-line) - var(--cbd-help-size)) / 2);
+  width: var(--cbd-help-size); height: var(--cbd-help-size); padding: 0; border-radius: 999px;
+  display: inline-grid; place-items: center;
+  font-size: 8.5px; font-weight: 700; line-height: 1; background: transparent !important;
+  --cbd-help-ink: color-mix(in srgb, var(--cbd-text, #111) 32%, transparent);
+  color: var(--cbd-help-ink); box-shadow: inset 0 0 0 1px var(--cbd-help-ink);
+  transition: color var(--cbd-dur) ease, box-shadow var(--cbd-dur) ease !important;
+}
+.cbd-bar .cbd-help:hover .cbd-help-btn, .cbd-bar .cbd-help:focus-within .cbd-help-btn, .cbd-bar .cbd-help[data-open] .cbd-help-btn {
+  --cbd-help-ink: color-mix(in srgb, var(--cbd-text, #111) var(--cbd-muted, 65%), transparent);
+}
+.cbd-help-tip {
+  position: absolute; left: 0; top: calc(100% + 8px); box-sizing: border-box;
+  /* Wide enough that each shortcut stays on one line. */
+  width: max-content; min-width: 100%; max-width: min(520px, calc(100vw - 32px));
+  padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--cbd-border, color-mix(in srgb, var(--cbd-text, #111) 12%, transparent));
+  background: var(--cbd-raised, var(--cbd-surface, #fff)); color: var(--cbd-text, #111);
+  box-shadow: var(--cbd-shadow-lg, 0 8px 20px rgba(0, 0, 0, .28));
+  font-size: 12px; line-height: 1.55; text-align: left; cursor: default;
+  opacity: 0; visibility: hidden; transform: translateY(-6px); pointer-events: none;
+  transition: opacity var(--cbd-dur-hover) ease-in, transform var(--cbd-dur-hover) ease-in, visibility 0s linear var(--cbd-dur-hover);
+}
+.cbd-help:hover .cbd-help-tip, .cbd-help:focus-within .cbd-help-tip, .cbd-help[data-open] .cbd-help-tip {
+  opacity: 1; visibility: visible; transform: none; pointer-events: auto;
+  transition: opacity var(--cbd-dur) ease-out, transform var(--cbd-dur) ease-out, visibility 0s;
+}
+.cbd-help-tip table { border-collapse: collapse; width: 100%; }
+.cbd-help-tip th { padding: 2px 16px 2px 0; text-align: left; white-space: nowrap; font-weight: 600; vertical-align: top; }
+.cbd-help-tip td { padding: 2px 0; color: color-mix(in srgb, var(--cbd-text, #111) var(--cbd-muted, 65%), transparent); }
+.cbd-help-tip p {
+  margin: 8px 0 0; padding-top: 8px; font-size: 11px;
+  border-top: 1px solid color-mix(in srgb, var(--cbd-text, #111) 10%, transparent);
+  color: color-mix(in srgb, var(--cbd-text, #111) var(--cbd-faint, 45%), transparent);
+}
+.cbd-help-tip p + p { margin-top: 4px; padding-top: 0; border-top: none; }
+
+/* Sidebar header switch: native look while OFF (it copies the search button's classes);
+   ON tints background and icon with the theme accent. */
+.cbd-side-switch { transition: background-color var(--cbd-dur) ease, color var(--cbd-dur) ease !important; }
+.cbd-side-switch[aria-pressed="true"] {
+  background-color: color-mix(in srgb, var(--cbd-accent, currentColor) var(--cbd-tint-hover, 32%), transparent) !important;
+  color: var(--cbd-accent-text, var(--cbd-accent, currentColor)) !important;
+}
+.cbd-side-switch svg { display: block; }
+/* Search and sidebar toggle while delete mode is ON. */
+/* Locked controls (and the row drawn around overlay buttons) look disabled: dimmed and
+   desaturated, with no pointer interaction, so ChatGPT's hover styles and hover
+   animations never trigger. */
+/* Locked controls fade both ways: the marker outlives the lock for the way back. */
+[data-cbd-fade] { transition: opacity var(--cbd-dur) ease, filter var(--cbd-dur) ease, background-color var(--cbd-dur-hover) ease, color var(--cbd-dur-hover) ease !important; }
+[data-cbd-disabled], [data-cbd-lock-area] {
+  opacity: .35 !important; filter: grayscale(1) !important; pointer-events: none !important;
+}
+/* Dim once: a locked button inside a locked area keeps full opacity of its own. */
+[data-cbd-lock-area] [data-cbd-disabled] { opacity: 1 !important; filter: none !important; }
+[data-cbd-lock-area] *, [data-cbd-disabled] * { transition: none !important; animation: none !important; }
+
+
+@media (prefers-reduced-motion: reduce) {
+  .cbd-bar, .cbd-bar *, .cbd-side-switch, a[data-cbd], [data-cbd-row], [data-cbd-shift], [data-cbd-fade], [data-cbd-disabled], [data-cbd-lock-area],
+  [data-cbd-item] {
+    animation: none !important; transition: none !important;
+  }
+}
