@@ -1,4 +1,4 @@
-// ChatGPT Bulk Delete - service worker
+// Off the Table for ChatGPT - service worker
 if (!globalThis.CBDI18n && typeof importScripts === "function") importScripts("i18n.js");
 const PROTOCOL = 3;
 const tabJobs = new Map();

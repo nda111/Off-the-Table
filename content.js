@@ -1,4 +1,4 @@
-// ChatGPT Bulk Delete: sidebar UI and private API integration.
+// Off the Table for ChatGPT: sidebar UI and private API integration.
 (() => {
   const VERSION = "0.11.0";
   const INSTANCE = "__cbdInstanceV2";
