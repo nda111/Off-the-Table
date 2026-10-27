@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "ChatGPT Bulk Delete"
+  },
+  "extDescription": {
+    "message": "選取 ChatGPT 對話並批次刪除。"
+  },
+  "actionTitle": {
+    "message": "開啟/關閉刪除模式"
+  }
+}

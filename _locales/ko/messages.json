@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "ChatGPT Bulk Delete"
+  },
+  "extDescription": {
+    "message": "ChatGPT 대화를 골라서 한 번에 삭제합니다."
+  },
+  "actionTitle": {
+    "message": "삭제 모드 켜기/끄기"
+  }
+}

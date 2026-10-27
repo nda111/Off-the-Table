@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "ChatGPT Bulk Delete"
+  },
+  "extDescription": {
+    "message": "ChatGPT sohbetlerini seçip toplu olarak silin."
+  },
+  "actionTitle": {
+    "message": "Silme modunu aç/kapat"
+  }
+}

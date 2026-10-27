@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Bulk Delete",
-  "version": "0.10.1",
-  "description": "ChatGPT 대화를 골라서 한 번에 삭제합니다.",
+  "name": "__MSG_extName__",
+  "version": "0.11.0",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
   "permissions": [
     "activeTab",
     "scripting"
   ],
   "action": {
-    "default_title": "삭제 모드 켜기/끄기"
+    "default_title": "__MSG_actionTitle__"
   },
   "background": {
     "service_worker": "background.js"
@@ -20,6 +21,7 @@
       ],
       "js": [
         "delete-queue.js",
+        "i18n.js",
         "content.js"
       ],
       "css": [

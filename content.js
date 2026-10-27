@@ -1,6 +1,6 @@
 // ChatGPT Bulk Delete: sidebar UI and private API integration.
 (() => {
-  const VERSION = "0.10.1";
+  const VERSION = "0.11.0";
   const INSTANCE = "__cbdInstanceV2";
   // Always replace a previous instance. After an extension reload the old script is
   // orphaned but can share this world's globals, so a version check would keep a dead
@@ -136,41 +136,39 @@
     return false;
   }
 
+  // UI language follows ChatGPT's <html lang> (its language setting), then the browser.
+  const pageLanguage = () => document.documentElement?.getAttribute("lang") || "";
+  let i18n = globalThis.CBDI18n.create(pageLanguage(), navigator?.language);
+  const t = (key, params) => i18n.t(key, params);
+
   // One status line; only its numbers carry the theme color.
   const summaryText = el("span", { className: "cbd-summary-text", role: "status", "aria-live": "polite" });
-  const num = value => el("span", { className: "cbd-num", textContent: String(value) });
   // The selected count is shown on the trash button; screen readers still hear it here.
   function renderSummary(total, selected) {
-    const parts = !total ? ["대화 목록이 비어 있습니다"] : ["대화 ", num(total), "개"];
-    if (selected) parts.push(el("span", { className: "cbd-sr-only", textContent: `, ${selected}개 선택됨` }));
+    const parts = !total ? [t("empty")] : i18n.parts("chats", { n: total }).map(part =>
+      typeof part === "string" ? part : el("span", { className: "cbd-num", textContent: part.value }));
+    if (selected) parts.push(el("span", { className: "cbd-sr-only", textContent: t("srSelected", { n: selected }) }));
     const text = parts.map(part => typeof part === "string" ? part : part.textContent).join("");
     if (summaryText.textContent !== text) summaryText.replaceChildren(...parts);
   }
   const selectAllBtn = el("button", { type: "button" });
   // Trash icon plus the selected count (no number while nothing is selected).
-  const deleteBtn = el("button", { type: "button", className: "cbd-danger cbd-delete", title: "선택 삭제", "aria-label": "선택 삭제" });
+  const deleteBtn = el("button", { type: "button", className: "cbd-danger cbd-delete" });
   const deleteCount = el("span", { className: "cbd-delete-count", hidden: true });
   const feedback = el("div", { className: "cbd-feedback", role: "status", "aria-live": "polite", hidden: true });
   // Usage help: a "?" at the panel's top-right whose tooltip opens on hover, keyboard
   // focus, or a click (so it also works on touch and can be pinned open).
+  // [key label, description] message keys, in tooltip order.
   const HELP_ROWS = [
-    ["클릭", "대화 선택 / 해제"],
-    ["드래그", "범위를 누른 대화의 새 상태로 칠하기"],
-    ["Shift+클릭", "마지막으로 조작한 대화부터 범위 선택"],
-    ["Shift+End", "마지막으로 조작한 대화부터 목록 끝(오래된 대화)까지"],
-    ["Shift+Home", "마지막으로 조작한 대화부터 목록 처음까지"],
-    ["Ctrl+A", "목록의 대화 전체 선택"],
-    ["Esc", "선택 해제, 한 번 더 누르면 삭제 모드 종료"],
-    ["Delete", "선택 삭제"],
+    ["kClick", "hClick"], ["kDrag", "hDrag"], ["kShiftClick", "hShiftClick"], ["kShiftEnd", "hShiftEnd"],
+    ["kShiftHome", "hShiftHome"], ["kSelectAll", "hSelectAll"], ["kEsc", "hEsc"], ["kDelete", "hDelete"],
   ];
-  const helpTip = el("div", { className: "cbd-help-tip", id: "cbd-help-tip", role: "tooltip" }, [
-    el("table", {}, [el("tbody", {}, HELP_ROWS.map(([key, action]) =>
-      el("tr", {}, [el("th", { textContent: key }), el("td", { textContent: action })])))]),
-    el("p", { textContent: `삭제는 최대 ${DELETE_CONCURRENCY}개씩 동시에 처리하고, 요청 제한에 걸리면 잠시 기다렸다 이어갑니다.` }),
-  ]);
+  const helpRows = el("tbody");
+  const helpQueue = el("p");
+  const helpTip = el("div", { className: "cbd-help-tip", id: "cbd-help-tip", role: "tooltip" }, [el("table", {}, [helpRows]), helpQueue]);
   const helpBtn = el("button", {
     type: "button", className: "cbd-help-btn", textContent: "?",
-    "aria-label": "사용 방법", "aria-describedby": "cbd-help-tip", "aria-expanded": "false",
+    "aria-describedby": "cbd-help-tip", "aria-expanded": "false",
   });
   const help = el("div", { className: "cbd-help" }, [helpBtn, helpTip]);
   function setHelpOpen(open) {
@@ -184,12 +182,12 @@
   }, true);
   const actions = el("div", { className: "cbd-actions" }, [selectAllBtn, deleteBtn]);
   const confirmText = el("p", { className: "cbd-confirm-text", id: "cbd-confirm-text" });
-  const cancelDeleteBtn = el("button", { type: "button", textContent: "취소" });
-  const confirmDeleteBtn = el("button", { type: "button", className: "cbd-danger", textContent: "삭제" });
+  const cancelDeleteBtn = el("button", { type: "button" });
+  const confirmDeleteBtn = el("button", { type: "button", className: "cbd-danger" });
   const confirmBox = el("div", {
     className: "cbd-confirm", role: "alertdialog", "aria-labelledby": "cbd-confirm-text", hidden: true,
   }, [confirmText, el("div", { className: "cbd-actions" }, [cancelDeleteBtn, confirmDeleteBtn])]);
-  const bar = el("div", { className: "cbd-bar", hidden: true, role: "region", "aria-label": "대화 일괄 삭제" }, [
+  const bar = el("div", { className: "cbd-bar", hidden: true, role: "region" }, [
     el("div", { className: "cbd-summary" }, [summaryText, help]),
     actions, confirmBox, feedback,
   ]);
@@ -197,7 +195,7 @@
   // keeps the width of its longer label. The current label is the accessible name.
   function twoLabels(button, labels) {
     button.classList.add("cbd-two-labels");
-    for (const text of labels) button.append(el("span", { className: "cbd-label", textContent: text, "aria-hidden": "true" }));
+    button.replaceChildren(...labels.map(text => el("span", { className: "cbd-label", textContent: text, "aria-hidden": "true" })));
   }
   function showLabel(button, text) {
     for (const span of button.children) setMark(span, "cbdActive", span.textContent === text ? "" : null);
@@ -208,7 +206,7 @@
   const TRASH_ICON = '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"'
     + ' stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5h13M8 5.5V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5'
     + 'M5.5 5.5l.7 10a1.5 1.5 0 0 0 1.5 1.4h4.6a1.5 1.5 0 0 0 1.5-1.4l.7-10M8.5 8.5v5M11.5 8.5v5"/></svg>';
-  const sideBtn = el("button", { type: "button", title: "삭제 모드 켜기/끄기", "aria-pressed": "false" });
+  const sideBtn = el("button", { type: "button", "aria-pressed": "false" });
   const sideInner = el("span");
   sideInner.innerHTML = TRASH_ICON;
   sideBtn.append(sideInner);
@@ -295,7 +293,21 @@
       button.setAttribute("aria-disabled", "true");
     }
   }
-  twoLabels(selectAllBtn, ["전체 선택", "전체 해제"]);
+  // Every fixed label; re-run when ChatGPT's language changes. Counts are set in render().
+  function applyLanguage() {
+    bar.lang = i18n.locale;
+    bar.setAttribute("aria-label", t("region"));
+    helpRows.replaceChildren(...HELP_ROWS.map(([key, action]) =>
+      el("tr", {}, [el("th", { textContent: t(key) }), el("td", { textContent: t(action) })])));
+    setText(helpQueue, t("helpQueue", { n: DELETE_CONCURRENCY }));
+    helpBtn.setAttribute("aria-label", t("helpLabel"));
+    deleteBtn.title = t("deleteSelected");
+    setText(cancelDeleteBtn, t("cancel"));
+    setText(confirmDeleteBtn, t("delete"));
+    sideBtn.title = t("sideTitle");
+    twoLabels(selectAllBtn, [t("selectAll"), t("clearAll")]);
+  }
+  applyLanguage();
   let lastFocusedAt = 0;
   let lastInteractionAt = 0;
   function recordFocus() {
@@ -329,6 +341,8 @@
       ok: true, protocol: 3, enabled: state.enabled, busy: state.busy, count: state.known.size, selected: state.selected.size,
       // The toolbar badge uses the page's accent too.
       badgeColor: badgeTheme.color, badgeText: badgeTheme.text,
+      // Lets the toolbar title and errors use the page's language.
+      locale: i18n.locale,
     };
   }
   function publish() {
@@ -351,7 +365,7 @@
     lockHeader(docked && state.enabled);
     sideBtn.disabled = state.busy;
     sideBtn.setAttribute("aria-pressed", String(state.enabled));
-    sideBtn.setAttribute("aria-label", state.enabled ? "삭제 모드 끄기" : "삭제 모드 켜기");
+    sideBtn.setAttribute("aria-label", t(state.enabled ? "sideTurnOff" : "sideTurnOn"));
     setShown(bar, state.enabled);
     if (state.enabled) { observeMain(); placeBar(); }
     // Lets the stylesheet hide ChatGPT's hover actions while in delete mode. Re-applied
@@ -360,24 +374,24 @@
     renderSummary(state.known.size, state.selected.size);
     if (state.selected.size && lastSelectedCount >= 0 && lastSelectedCount !== state.selected.size && state.enabled) pop(deleteCount);
     lastSelectedCount = state.selected.size;
-    showLabel(selectAllBtn, state.selected.size ? "전체 해제" : "전체 선택");
+    showLabel(selectAllBtn, t(state.selected.size ? "clearAll" : "selectAll"));
     selectAllBtn.disabled = state.busy || (!state.selected.size && !state.known.size);
     deleteBtn.disabled = state.busy || !state.selected.size;
-    setText(deleteCount, state.selected.size ? String(state.selected.size) : "");
+    setText(deleteCount, state.selected.size ? i18n.number(state.selected.size) : "");
     deleteCount.hidden = !state.selected.size;
-    const deleteLabel = state.selected.size ? `선택한 ${state.selected.size}개 삭제` : "선택 삭제";
+    const deleteLabel = state.selected.size ? t("deleteN", { n: state.selected.size }) : t("deleteSelected");
     if (deleteBtn.getAttribute("aria-label") !== deleteLabel) deleteBtn.setAttribute("aria-label", deleteLabel);
     // A changed selection invalidates the question; ask again with the new count.
     if (state.confirming && (state.busy || state.selected.size !== state.confirming)) state.confirming = 0;
     actions.hidden = Boolean(state.confirming);
     cancelDeleteBtn.disabled = confirmDeleteBtn.disabled = state.busy;
     confirmBox.hidden = !state.confirming;
-    if (state.confirming) setText(confirmText, `${state.confirming}개의 대화를 모두 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`);
+    if (state.confirming) setText(confirmText, t("confirm", { n: state.confirming }));
     let text = state.message;
     if (state.busy && state.progress) {
       const progress = state.progress;
-      text = `삭제 중 ${progress.completed}/${progress.total}`;
-      if (state.cooldownUntil > Date.now()) text += ` · 요청 제한, 약 ${Math.ceil((state.cooldownUntil - Date.now()) / 1000)}초 대기`;
+      text = t("progress", { done: progress.completed, total: progress.total });
+      if (state.cooldownUntil > Date.now()) text += ` · ${t("cooldown", { n: Math.ceil((state.cooldownUntil - Date.now()) / 1000) })}`;
       if (state.message) text += ` · ${state.message}`;
     }
     feedback.hidden = !text;
@@ -548,7 +562,7 @@
   }
   function setEnabled(on) {
     if (state.busy && !on) {
-      state.message = "삭제 작업 중에는 모드를 끌 수 없습니다. 완료 후 다시 눌러 주세요.";
+      state.message = t("busyOff");
       render();
       throw new Error(state.message);
     }
@@ -829,8 +843,18 @@
     clearTimeout(themeRetry);
     themeRetry = setTimeout(() => { themeRetry = 0; if (!themeScheduled) themeScheduled = requestAnimationFrame(applyTheme); }, 450);
   }
+  // Changing ChatGPT's language rewrites <html lang> without a reload.
+  function updateLanguage() {
+    const next = globalThis.CBDI18n.create(pageLanguage(), navigator?.language);
+    if (next.locale === i18n.locale) return;
+    i18n = next;
+    applyLanguage();
+    render();
+    publish();
+  }
   // Theme switches show up as attribute changes on <html>/<body> or new style tags.
   const themeObserver = new MutationObserver(records => {
+    if (records.some(r => r.attributeName === "lang")) updateLanguage();
     if (records.some(r => r.type === "attributes" ? !r.attributeName?.startsWith("data-cbd")
       : [...r.addedNodes, ...r.removedNodes].some(n => n.nodeName === "STYLE" || n.nodeName === "LINK" || n.nodeName === "BODY"))) {
       scheduleTheme();
@@ -888,7 +912,7 @@
     if (state.busy) return;
     const order = state.order.filter(id => !state.deleted.has(id) && state.known.has(id));
     const from = order.indexOf(state.anchorId);
-    if (from < 0) { state.message = "먼저 기준이 될 대화를 클릭하세요."; render(); return; }
+    if (from < 0) { state.message = t("needAnchor"); render(); return; }
     const ids = toEnd ? order.slice(from) : order.slice(0, from + 1);
     for (const id of ids) select(id, state.anchorValue);
     state.message = "";
@@ -1131,15 +1155,15 @@
     const timer = setTimeout(() => controller.abort(), 30000);
     try { return await fetch(url, { ...options, signal: controller.signal }); }
     catch (error) {
-      if (error.name === "AbortError") throw new Error("서버 응답 시간 초과 (30초)");
+      if (error.name === "AbortError") throw new Error(t("errTimeout", { n: 30 }));
       throw error;
     } finally { clearTimeout(timer); }
   }
   async function getSession() {
     const response = await request("/api/auth/session");
-    if (!response.ok) throw new Error(`로그인 확인 실패: ${response.status}`);
+    if (!response.ok) throw new Error(t("errLogin", { status: response.status }));
     const data = await response.json();
-    if (!data.accessToken) throw new Error("로그인 상태가 아닙니다.");
+    if (!data.accessToken) throw new Error(t("errNotLoggedIn"));
     // Codex requests carry the workspace id; fall back to ChatGPT's account cookie.
     const cookie = document.cookie.match(/(?:^|;\s*)_account=([^;]+)/)?.[1];
     return { token: data.accessToken, accountId: data.account?.id || (cookie && decodeURIComponent(cookie)) || "" };
@@ -1158,7 +1182,7 @@
         body: JSON.stringify({ is_visible: false }),
       });
     if (!response.ok) {
-      const error = new Error(`삭제 실패: ${response.status}`);
+      const error = new Error(t("errDelete", { status: response.status }));
       error.status = response.status;
       error.retryAfter = response.headers.get("Retry-After");
       throw error;
@@ -1190,7 +1214,7 @@
     state.progress = { completed: 0, total: ids.length };
     refresh();
     try {
-      if (!globalThis.CBDDeleteQueue?.run) throw new Error("삭제 모듈이 없습니다. 확장과 페이지를 새로고침해 주세요.");
+      if (!globalThis.CBDDeleteQueue?.run) throw new Error(t("errModule"));
       const session = await getSession();
       const result = await globalThis.CBDDeleteQueue.run(ids, {
         concurrency: DELETE_CONCURRENCY, delayMs: DELETE_DELAY_MS, maxRetries: 3,
@@ -1202,15 +1226,15 @@
         },
         onCooldown: ms => { state.cooldownUntil = Date.now() + ms; render(); },
       });
-      const parts = [`${result.succeeded.length}개 삭제 완료`];
-      if (result.failed.length) parts.push(`실패 ${result.failed.length}개`);
-      if (result.pending.length) parts.push(`보류 ${result.pending.length}개`);
-      if (result.fatal) parts.push(`중단: ${result.fatal.message}`);
+      const parts = [t("done", { n: result.succeeded.length })];
+      if (result.failed.length) parts.push(t("failed", { n: result.failed.length }));
+      if (result.pending.length) parts.push(t("pending", { n: result.pending.length }));
+      if (result.fatal) parts.push(t("aborted", { msg: result.fatal.message }));
       state.message = parts.join(" · ");
-      if (result.failed.length || result.pending.length) state.message += " (미삭제 항목은 선택 유지)";
-      if (state.deleted.has(idFromURL(document.location?.href))) state.message += " · 지금 열린 대화도 삭제되었습니다";
+      if (result.failed.length || result.pending.length) state.message += ` ${t("keepSelected")}`;
+      if (state.deleted.has(idFromURL(document.location?.href))) state.message += ` · ${t("currentDeleted")}`;
     } catch (error) {
-      state.message = `오류: ${error.message}`;
+      state.message = t("error", { msg: error.message });
     } finally {
       state.busy = false;
       state.progress = null;
@@ -1227,7 +1251,7 @@
     if (!["cbd-status", "cbd-set-mode", "cbd-toggle"].includes(message.type)) return;
     try {
       if (message.type === "cbd-set-mode") {
-        if (typeof message.enabled !== "boolean") throw new Error("잘못된 모드 요청입니다.");
+        if (typeof message.enabled !== "boolean") throw new Error(t("badMode"));
         setEnabled(message.enabled);
       } else if (message.type === "cbd-toggle") setEnabled(!state.enabled);
       sendResponse(refresh());

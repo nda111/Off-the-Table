@@ -77,7 +77,7 @@
         },
         async executeScript(data) {
           record("script", data);
-          equal(data.files, ["delete-queue.js", "content.js"], "Recovery must inject queue before content");
+          equal(data.files, ["delete-queue.js", "i18n.js", "content.js"], "Recovery must inject queue and strings before content");
           if (config.script) return config.script(data, h);
         }
       }
@@ -189,7 +189,7 @@
     h.click(); await flush(); equal(h.modes(), [], "Pending status must not route");
     assert([...h.timers.values()].some(t => t.ms === 4000), "Status deadline is 4000ms");
     h.fire(4000); await flush(); safeAmbiguity(h, [LEFT]);
-    equal(h.log.filter(e => e.kind === "script").map(e => e.files), [["delete-queue.js", "content.js"]], "Both startup scripts attempted");
+    equal(h.log.filter(e => e.kind === "script").map(e => e.files), [["delete-queue.js", "i18n.js", "content.js"]], "Both startup scripts attempted");
   });
   test("startup missing script in one pane: ready pane helper plus ERR", async source => {
     const h = dual(source, { focus: { [LEFT]: focus(false, 900) }, send(id, message, env) {
@@ -231,7 +231,7 @@
     } });
     h.click(); await flush();
     equal(h.log.filter(e => e.kind === "css" || e.kind === "script").map(e => [e.kind, e.target, e.files]), [
-      ["css", { tabId: LEFT }, ["panel.css"]], ["script", { tabId: LEFT }, ["delete-queue.js", "content.js"]]
+      ["css", { tabId: LEFT }, ["panel.css"]], ["script", { tabId: LEFT }, ["delete-queue.js", "i18n.js", "content.js"]]
     ], "Full recovery sequence");
     equal(h.modes(), [[LEFT, true]], "Recovered action toggles");
     equal(h.sends("cbd-status").length, 2, "Status rechecked after injection");
@@ -245,6 +245,16 @@
     h.click(); await flush();
     equal(h.log.filter(e => e.kind === "script").length, 1, "Old protocol reinjected");
     equal(h.modes(), [[LEFT, true]], "Protocol 3 handshake then toggle");
+  });
+  test("toolbar title follows the language the page reports", async source => {
+    const h = harness(source, { send(id, message, env) {
+      if (message.type === "cbd-status") return { ok: true, protocol: P, enabled: false, count: 2, locale: "en" };
+      if (message.type === "cbd-set-mode") return { ok: true, protocol: P, enabled: true, count: 2, locale: "en" };
+      return env.DEFAULT;
+    } });
+    h.click(); await flush();
+    const titles = h.log.filter(e => e.kind === "title").map(e => e.title);
+    equal(titles.at(-1), "Delete mode ON · 2 chats found", "English title from the page locale");
   });
   test("persistently wrong protocol fails closed after reinjection", async source => {
     const h = harness(source, { send(id, message, env) {

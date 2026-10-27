@@ -1,19 +1,29 @@
 // ChatGPT Bulk Delete - service worker
+if (!globalThis.CBDI18n && typeof importScripts === "function") importScripts("i18n.js");
 const PROTOCOL = 3;
 const tabJobs = new Map();
 
-// Last accent each page reported, so error/status badges keep the page's theme color.
+// Last accent and language each page reported, so badges keep the page's theme color
+// and titles/errors use ChatGPT's language (the browser's until a page reports one).
 const tabThemes = new Map();
+const tabLocales = new Map();
+function remember(tabId, status) {
+  if (status?.badgeColor) tabThemes.set(tabId, status);
+  if (status?.locale) tabLocales.set(tabId, status.locale);
+}
+function t(tabId, key, params) {
+  return globalThis.CBDI18n.create(tabLocales.get(tabId), chrome.i18n?.getUILanguage?.()).t(key, params);
+}
 
 async function setBadge(tabId, enabled, count = 0, error = "", theme) {
-  if (theme?.badgeColor) tabThemes.set(tabId, theme);
+  remember(tabId, theme);
   const colors = tabThemes.get(tabId);
   await Promise.all([
     chrome.action.setBadgeText({ tabId, text: enabled ? "ON" : error ? "ERR" : "OFF" }),
     chrome.action.setBadgeBackgroundColor({ tabId, color: error ? "#b3261e" : colors?.badgeColor || "#d93025" }),
     // setBadgeTextColor exists from Chrome 110; older builds keep the default white.
     chrome.action.setBadgeTextColor?.({ tabId, color: error ? "#ffffff" : colors?.badgeText || "#ffffff" }),
-    chrome.action.setTitle({ tabId, title: error || (enabled ? `삭제 모드 ON · 대화 ${count}개 감지` : "삭제 모드 켜기/끄기") }),
+    chrome.action.setTitle({ tabId, title: error || t(tabId, enabled ? "bgTitleOn" : "sideTitle", { n: count }) }),
   ]);
 }
 
@@ -21,7 +31,7 @@ function sendToContent(tabId, message, timeoutMs = 4000) {
   let timer;
   return Promise.race([
     chrome.tabs.sendMessage(tabId, message, { frameId: 0 }),
-    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error("페이지 응답 시간 초과. ChatGPT를 새로고침해 주세요.")), timeoutMs); }),
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(t(tabId, "bgPageTimeout"))), timeoutMs); }),
   ]).finally(() => clearTimeout(timer));
 }
 
@@ -36,13 +46,15 @@ async function ensureContent(tabId) {
   if (!isSupportedURL(tab.url)) return { ok: false, unsupported: true };
   try {
     const status = await sendToContent(tabId, { type: "cbd-status" });
+    remember(tabId, status);
     if (status?.protocol === PROTOCOL && status.ok) return status;
   } catch { /* The page may predate extension installation. */ }
   await chrome.scripting.insertCSS({ target: { tabId }, files: ["panel.css"] });
-  await chrome.scripting.executeScript({ target: { tabId }, files: ["delete-queue.js", "content.js"] });
+  await chrome.scripting.executeScript({ target: { tabId }, files: ["delete-queue.js", "i18n.js", "content.js"] });
   const status = await sendToContent(tabId, { type: "cbd-status" });
+  remember(tabId, status);
   if (status?.protocol !== PROTOCOL || !status.ok) {
-    throw new Error("확장 스크립트 초기화 실패. 확장과 ChatGPT를 새로고침해 주세요.");
+    throw new Error(t(tabId, "bgInit"));
   }
   return status;
 }
@@ -62,7 +74,7 @@ async function toggleTab(tabId) {
     if (status.unsupported) return status;
     status = await sendToContent(tabId, { type: "cbd-set-mode", enabled: !status.enabled });
     if (!status?.ok) {
-      await setBadge(tabId, Boolean(status?.enabled), status?.count, status?.error || "삭제 모드를 변경하지 못했습니다.");
+      await setBadge(tabId, Boolean(status?.enabled), status?.count, status?.error || t(tabId, "bgToggle"));
       return status;
     }
     await setBadge(tabId, status.enabled, status.count, "", status);
@@ -87,11 +99,11 @@ async function resolveTargetTab(actionTab) {
   try {
     activeTabs = await chrome.tabs.query({ active: true, windowId: actionTab.windowId });
   } catch (error) {
-    throw new Error("활성 탭을 확인하지 못했습니다. 조작할 ChatGPT 화면을 클릭한 뒤 다시 시도해 주세요.");
+    throw new Error(t(actionTab.id, "bgActiveTab"));
   }
   const candidates = [...new Map(activeTabs.filter(tab => Number.isInteger(tab.id)).map(tab => [tab.id, tab])).values()];
   if (candidates.length === 1) return candidates[0];
-  if (!candidates.length) throw new Error("활성 탭을 찾지 못했습니다. ChatGPT 화면을 클릭한 뒤 다시 시도해 주세요.");
+  if (!candidates.length) throw new Error(t(actionTab.id, "bgNoActive"));
 
   const probes = await Promise.all(candidates.map(async tab => {
     try {
@@ -121,7 +133,7 @@ async function resolveTargetTab(actionTab) {
   await Promise.all(ready.map(item =>
     sendToContent(item.tab.id, { type: "cbd-show-local-toggle" }, 500).catch(() => {})
   ));
-  const error = new Error("듀얼탭 대상을 구분할 수 없습니다. 원하는 화면 사이드바의 휴지통 버튼을 사용하거나 화면을 클릭한 뒤 다시 시도해 주세요.");
+  const error = new Error(t(ready[0]?.tab.id ?? actionTab.id, "bgAmbiguous"));
   // ChatGPT panes that can show the error, even when the browser passed another pane.
   error.tabIds = ready.map(item => item.tab.id);
   throw error;
@@ -138,4 +150,4 @@ chrome.action.onClicked.addListener(tab => {
     });
 });
 
-chrome.tabs.onRemoved?.addListener(tabId => tabThemes.delete(tabId));
+chrome.tabs.onRemoved?.addListener(tabId => { tabThemes.delete(tabId); tabLocales.delete(tabId); });

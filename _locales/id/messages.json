@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "ChatGPT Bulk Delete"
+  },
+  "extDescription": {
+    "message": "Pilih chat ChatGPT dan hapus sekaligus."
+  },
+  "actionTitle": {
+    "message": "Aktifkan/nonaktifkan mode hapus"
+  }
+}

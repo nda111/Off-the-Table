@@ -1,6 +1,6 @@
 // Browser-only integration tests. No real requests are sent.
-// Call await runCBDUITests({ contentSource, queueSource }) on a blank test page.
-globalThis.runCBDUITests = async function ({ contentSource, queueSource, userAgent = "Chrome/Test" }) {
+// Call await runCBDUITests({ contentSource, queueSource, i18nSource }) on a blank test page.
+globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSource, userAgent = "Chrome/Test" }) {
   const results = [];
   const assert = (condition, label) => {
     if (!condition) throw new Error(label);
@@ -55,6 +55,9 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, userAge
   } };
   const isolated = {};
   new Function("globalThis", queueSource)(isolated);
+  new Function("globalThis", i18nSource)(isolated);
+  // The expectations below are written against ChatGPT's Korean UI.
+  document.documentElement.lang = "ko-KR";
   const pendingResponses = [];
   const requests = [];
   let autoRelease = false;
@@ -188,6 +191,20 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, userAge
     assert(!deleteButton().querySelector(".cbd-delete-count").hidden && deleteButton().querySelector(".cbd-delete-count").textContent === "1"
       && deleteButton().getAttribute("aria-label") === "선택한 1개 삭제" && deleteButton().querySelector(".cbd-delete-count").dataset.pop,
       "The trash button shows the selected count, which pops when it changes");
+    // Switching ChatGPT's language re-labels the panel without a reload.
+    document.documentElement.lang = "en-US";
+    await settle();
+    assert(summary().textContent === `${status().count} Chats, 1 selected` && label(selectionButton()) === "Clear all"
+      && deleteButton().getAttribute("aria-label") === "Delete 1 selected chat" && document.querySelector(".cbd-bar").lang === "en"
+      && document.querySelector(".cbd-help-tip th").textContent === "Click" && send({ type: "cbd-status" }).locale === "en",
+      "Changing <html lang> to English re-labels the panel and reports the locale");
+    document.documentElement.lang = "ru";
+    await settle();
+    assert(summary().querySelector(".cbd-num") && /чат/.test(summary().textContent) && label(selectionButton()) === "Снять все",
+      "Russian labels apply too");
+    document.documentElement.lang = "ko-KR";
+    await settle();
+    assert(summary().textContent === `대화 ${status().count}개, 1개 선택됨` && label(selectionButton()) === "전체 해제", "...and back to Korean");
     document.querySelector("a[data-cbd-href]").click();
     const sel = a => a.dataset.cbdItem === "selected";
     assert(document.querySelectorAll("[data-cbd-item]").length === 4 && document.documentElement.hasAttribute("data-cbd-mode") && !document.querySelector(".cbd-check"),

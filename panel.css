@@ -46,8 +46,9 @@ a[data-cbd="vanishing"], [data-cbd-row="vanishing"] {
   --cbd-pad: 16px; --cbd-line: 19.5px; /* 13px text at line-height 1.5 */
   gap: 12px !important; padding: var(--cbd-pad) 18px !important;
   /* A steady width: counts and result messages wrap inside instead of resizing the panel. */
-  /* 236px leaves 200px inside: two ~96px action buttons, the status line and the "?". */
-  width: 236px; max-width: calc(100vw - 40px); box-sizing: border-box;
+  /* At least 236px (two ~96px action buttons); wider only when a language's button labels
+     need it. Text blocks below never widen it (contain: inline-size) and wrap instead. */
+  width: max-content; min-width: 236px; max-width: calc(100vw - 40px); box-sizing: border-box;
   border: 1px solid var(--cbd-border, color-mix(in srgb, var(--cbd-text, #111) 12%, transparent)); border-radius: 12px;
   background: var(--cbd-raised, var(--cbd-surface, #fff)) !important; color: var(--cbd-text, #111) !important;
   font-family: system-ui, sans-serif !important; font-size: 13px !important; line-height: 1.5 !important;
@@ -71,8 +72,9 @@ a[data-cbd="vanishing"], [data-cbd-row="vanishing"] {
 .cbd-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .cbd-summary, .cbd-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .cbd-actions { gap: 8px; flex-wrap: nowrap; }
-/* The two main actions split the row evenly. */
-.cbd-bar > .cbd-actions > button { flex: 1 1 0; }
+/* The two main actions share the row in equal columns sized by the longer label. */
+.cbd-bar > .cbd-actions { display: grid; grid-template-columns: 1fr 1fr; }
+.cbd-summary, .cbd-feedback, .cbd-confirm-text { contain: inline-size; }
 .cbd-bar button {
   padding: 6px 12px; border: none; border-radius: 999px;
   background: color-mix(in srgb, var(--cbd-text, #111) 9%, transparent); color: inherit;

@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "ChatGPT Bulk Delete"
+  },
+  "extDescription": {
+    "message": "Selecione chats do ChatGPT e exclua-os em massa."
+  },
+  "actionTitle": {
+    "message": "Ativar/desativar o modo de exclusão"
+  }
+}
