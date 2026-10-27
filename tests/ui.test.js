@@ -93,6 +93,14 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
   try {
     initialize(document, chromeMock, isolated, fakeFetch, () => true);
     assert(status().count === 0, "Nothing is counted while delete mode is OFF");
+    const ctrlD = new KeyboardEvent("keydown", { key: "ㅇ", code: "KeyD", ctrlKey: true, bubbles: true, cancelable: true });
+    document.body.dispatchEvent(ctrlD);
+    assert(status().enabled && ctrlD.defaultPrevented, "Ctrl+D turns delete mode on (by key position, so a Korean layout works) instead of bookmarking");
+    document.body.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyD", key: "d", ctrlKey: true, bubbles: true, cancelable: true }));
+    assert(!status().enabled, "...and off again");
+    const shiftD = new KeyboardEvent("keydown", { code: "KeyD", key: "D", ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true });
+    document.body.dispatchEvent(shiftD);
+    assert(!status().enabled && !shiftD.defaultPrevented, "Other modifier combinations are left alone");
     assert(document.querySelector(".cbd-summary-text").textContent === "대화 목록이 비어 있습니다" && !document.querySelector(".cbd-num"),
       "An empty list says so without numbers");
     assert(!status().enabled && document.querySelector(".cbd-bar").hidden, "Starts OFF");
@@ -196,7 +204,7 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
     await settle();
     assert(summary().textContent === `${status().count} Chats, 1 selected` && label(selectionButton()) === "Clear all"
       && deleteButton().getAttribute("aria-label") === "Delete 1 selected chat" && document.querySelector(".cbd-bar").lang === "en"
-      && document.querySelector(".cbd-help-tip th").textContent === "Click" && send({ type: "cbd-status" }).locale === "en",
+      && [...document.querySelectorAll(".cbd-help-tip th")].map(th => th.textContent).slice(0, 2).join() === "Ctrl+D,Click" && send({ type: "cbd-status" }).locale === "en",
       "Changing <html lang> to English re-labels the panel and reports the locale");
     document.documentElement.lang = "ru";
     await settle();

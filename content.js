@@ -158,9 +158,11 @@
   const feedback = el("div", { className: "cbd-feedback", role: "status", "aria-live": "polite", hidden: true });
   // Usage help: a "?" at the panel's top-right whose tooltip opens on hover, keyboard
   // focus, or a click (so it also works on touch and can be pinned open).
+  const IS_MAC = /Mac|iPhone|iPad/.test(navigator?.platform || navigator?.userAgent || "");
+  const toggleKeys = () => IS_MAC ? "⌘D" : t("kToggle");
   // [key label, description] message keys, in tooltip order.
   const HELP_ROWS = [
-    ["kClick", "hClick"], ["kDrag", "hDrag"], ["kShiftClick", "hShiftClick"], ["kShiftEnd", "hShiftEnd"],
+    [toggleKeys, "sideTitle"], ["kClick", "hClick"], ["kDrag", "hDrag"], ["kShiftClick", "hShiftClick"], ["kShiftEnd", "hShiftEnd"],
     ["kShiftHome", "hShiftHome"], ["kSelectAll", "hSelectAll"], ["kEsc", "hEsc"], ["kDelete", "hDelete"],
   ];
   const helpRows = el("tbody");
@@ -298,7 +300,7 @@
     bar.lang = i18n.locale;
     bar.setAttribute("aria-label", t("region"));
     helpRows.replaceChildren(...HELP_ROWS.map(([key, action]) =>
-      el("tr", {}, [el("th", { textContent: t(key) }), el("td", { textContent: t(action) })])));
+      el("tr", {}, [el("th", { textContent: typeof key === "function" ? key() : t(key) }), el("td", { textContent: t(action) })])));
     setText(helpQueue, t("helpQueue", { n: DELETE_CONCURRENCY }));
     helpBtn.setAttribute("aria-label", t("helpLabel"));
     deleteBtn.title = t("deleteSelected");
@@ -1105,6 +1107,16 @@
     if (!target?.closest || target.closest(SIDEBAR_SELECTOR)) return false;
     return Boolean(target.closest(EDITABLE_SELECTOR));
   }
+  // Ctrl+D (⌘D on Mac, where Ctrl+D deletes forward in text) toggles delete mode anywhere
+  // on the page, even while typing, like ChatGPT's own Ctrl+K. On ChatGPT it replaces the
+  // browser's bookmark shortcut. KeyD also matches non-Latin layouts (ㅇ on Korean).
+  listen(view, "keydown", event => {
+    if (event.isComposing || event.repeat || event.altKey || event.shiftKey || event.code !== "KeyD") return;
+    if (!(IS_MAC ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey)) return;
+    block(event);
+    try { setEnabled(!state.enabled); }
+    catch (error) { state.message = error.message; render(); }
+  }, true);
   listen(view, "keydown", event => {
     // defaultPrevented is not checked: ChatGPT may claim keys such as Escape globally.
     if (!state.enabled || event.isComposing || typingTarget(event)) return;
