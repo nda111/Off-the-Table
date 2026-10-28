@@ -83,7 +83,7 @@ The extension follows ChatGPT's language setting and switches as soon as you cha
 
 ## Privacy
 
-The extension talks only to chatgpt.com, using your existing login, to delete the conversations you choose. It doesn't collect, store or send your data anywhere else.
+The extension talks only to chatgpt.com, using your existing login, to delete the conversations you choose. It doesn't collect, store or send your data anywhere else. See the [privacy policy](PRIVACY.md).
 
 ## Good to know
 
