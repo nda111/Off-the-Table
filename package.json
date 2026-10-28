@@ -1,6 +1,7 @@
 {
   "name": "off-the-table-for-chatgpt",
   "private": true,
+  "license": "MIT",
   "description": "Development tooling only; the extension itself has no dependencies.",
   "scripts": {
     "test": "node tests/run.js"

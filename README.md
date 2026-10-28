@@ -4,7 +4,8 @@
 
 <h1 align="center">Off the Table for ChatGPT</h1>
 
-<p align="center">Select ChatGPT conversations and Codex tasks right in the sidebar, then delete them all at once.</p>
+<p align="center">Select ChatGPT conversations and Codex tasks right in the sidebar, then delete them all at once.<br>
+  A free, open-source alternative to paid bulk-delete extensions.</p>
 
 ## Compatibility and affiliation
 
@@ -94,3 +95,7 @@ The extension talks only to chatgpt.com, using your existing login, to delete th
 ## Development
 
 Run `npm install` once, then `npm test`. Leave `package.json`, `package-lock.json`, `node_modules/` and `tests/` out of the store zip, and upload `store/icon_128.png` as the store icon.
+
+## License
+
+[MIT](LICENSE)
