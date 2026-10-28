@@ -77,7 +77,7 @@ Needed to show the selection interface in the ChatGPT sidebar and to send the de
 All JavaScript is included in the package. The extension does not load or evaluate any external code.
 ```
 
-**Data usage** — check only:
+**Data usage** (check only this one):
 
 - [x] Authentication information
 
