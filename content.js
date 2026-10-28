@@ -32,6 +32,8 @@
   const VANISH_MS = 260; // matches cbd-row-out in panel.css
   const EDITABLE_SELECTOR = 'input, textarea, select, [contenteditable=""], [contenteditable="true"]';
   const view = document.defaultView;
+  // Aborts the running delete queue (see stopDeleting).
+  let stopController = null;
   const state = {
     enabled: false, busy: false,
     known: new Set(), selected: new Set(), deleted: new Set(),
@@ -208,6 +210,9 @@
   const TRASH_ICON = '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"'
     + ' stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5h13M8 5.5V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5'
     + 'M5.5 5.5l.7 10a1.5 1.5 0 0 0 1.5 1.4h4.6a1.5 1.5 0 0 0 1.5-1.4l.7-10M8.5 8.5v5M11.5 8.5v5"/></svg>';
+  // While deleting, the panel's delete button becomes a stop button.
+  const STOP_ICON = '<svg aria-hidden="true" class="cbd-stop-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">'
+    + '<rect x="5" y="5" width="10" height="10" rx="2"/></svg>';
   const sideBtn = el("button", { type: "button", "aria-pressed": "false" });
   // Chip tooltip for the switch (see renderSideTip); built here because labels are applied early.
   const sideTipLabel = el("span");
@@ -224,7 +229,7 @@
   const sideInner = el("span");
   sideInner.innerHTML = TRASH_ICON;
   sideBtn.append(sideInner);
-  deleteBtn.innerHTML = TRASH_ICON;
+  deleteBtn.innerHTML = TRASH_ICON + STOP_ICON;
   deleteBtn.append(deleteCount);
   function searchButton() {
     const icon = document.querySelector('nav use[href*="magnifying-glass"], aside use[href*="magnifying-glass"]');
@@ -393,10 +398,13 @@
     lastSelectedCount = state.selected.size;
     showLabel(selectAllBtn, t(state.selected.size ? "clearAll" : "selectAll"));
     selectAllBtn.disabled = state.busy || (!state.selected.size && !state.known.size);
-    deleteBtn.disabled = state.busy || !state.selected.size;
+    const stopping = Boolean(state.busy && stopController);
+    deleteBtn.disabled = state.busy ? !stopping || stopController.signal.aborted : !state.selected.size;
+    deleteBtn.classList.toggle("cbd-stop", stopping);
     setText(deleteCount, state.selected.size ? i18n.number(state.selected.size) : "");
     deleteCount.hidden = !state.selected.size;
-    const deleteLabel = state.selected.size ? t("deleteN", { n: state.selected.size }) : t("deleteSelected");
+    const deleteLabel = stopping ? t("stopDeleting")
+      : state.selected.size ? t("deleteN", { n: state.selected.size }) : t("deleteSelected");
     if (deleteBtn.getAttribute("aria-label") !== deleteLabel) deleteBtn.setAttribute("aria-label", deleteLabel);
     // A changed selection invalidates the question; ask again with the new count.
     if (state.confirming && (state.busy || state.selected.size !== state.confirming)) state.confirming = 0;
@@ -1149,14 +1157,15 @@
     } else if (event.key === "Escape" && !mod) {
       // Leave Escape to ChatGPT while one of its dialogs or menus is actually open.
       if (overlayOpen()) return;
-      if (state.confirming) cancelDelete();
+      if (state.busy) stopDeleting();
+      else if (state.confirming) cancelDelete();
       else if (state.selected.size) { if (!state.busy) clearSelection(); }
       else if (!state.busy) setEnabled(false);
     } else if ((event.key === "End" || event.key === "Home") && event.shiftKey && !mod && !event.altKey) {
       chooseToEdge(event.key === "End");
     } else if (event.key === "Delete" && !mod) {
       if (state.confirming) confirmDeleteBtn.click();
-      else if (!deleteBtn.disabled) deleteBtn.click();
+      else if (!state.busy && !deleteBtn.disabled) deleteBtn.click();
     } else if ((event.key === " " || event.key === "Enter") && link && !mod) {
       // Without an href, Enter no longer synthesizes a click, so both keys toggle here.
       choose(link.id, { range: event.shiftKey });
@@ -1301,8 +1310,16 @@
     state.confirming = 0;
     deleteSelected();
   });
+  // Stopping sends no new requests; ones already sent finish, since the server may have
+  // deleted them. Chats that weren't reached stay selected.
+  function stopDeleting() {
+    if (!stopController || stopController.signal.aborted) return;
+    stopController.abort();
+    render();
+  }
   listen(deleteBtn, "click", () => {
-    if (state.busy || !state.selected.size) return;
+    if (state.busy) { stopDeleting(); return; }
+    if (!state.selected.size) return;
     if (state.selected.size < CONFIRM_AT) { deleteSelected(); return; }
     state.confirming = state.selected.size;
     render();
@@ -1311,6 +1328,7 @@
   async function deleteSelected() {
     if (state.busy || !state.selected.size) return;
     const ids = [...state.selected];
+    stopController = new AbortController();
     state.busy = true;
     state.message = "";
     state.progress = { completed: 0, total: ids.length };
@@ -1319,7 +1337,7 @@
       if (!globalThis.CBDDeleteQueue?.run) throw new Error(t("errModule"));
       const session = await getSession();
       const result = await globalThis.CBDDeleteQueue.run(ids, {
-        concurrency: DELETE_CONCURRENCY, delayMs: DELETE_DELAY_MS, maxRetries: 3,
+        concurrency: DELETE_CONCURRENCY, delayMs: DELETE_DELAY_MS, maxRetries: 3, signal: stopController.signal,
         deleteOne: id => deleteConversation(session, id),
         onResult: ({ id, ok, completed, total }) => {
           if (ok) { state.selected.delete(id); state.known.delete(id); vanish(id); }
@@ -1329,6 +1347,7 @@
         onCooldown: ms => { state.cooldownUntil = Date.now() + ms; render(); },
       });
       const parts = [t("done", { n: result.succeeded.length })];
+      if (result.aborted) parts.push(t("stopped"));
       if (result.failed.length) parts.push(t("failed", { n: result.failed.length }));
       if (result.pending.length) parts.push(t("pending", { n: result.pending.length }));
       if (result.fatal) parts.push(t("aborted", { msg: result.fatal.message }));
@@ -1339,6 +1358,7 @@
       state.message = t("error", { msg: error.message });
     } finally {
       state.busy = false;
+      stopController = null;
       state.progress = null;
       state.cooldownUntil = 0;
       refresh();

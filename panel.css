@@ -89,6 +89,8 @@ a[data-cbd="vanishing"], [data-cbd-row="vanishing"] {
 /* Icon + count; the row keeps both buttons at the same width as before. */
 .cbd-bar .cbd-delete { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
 .cbd-delete svg { width: 16px; height: 16px; flex: none; }
+.cbd-delete .cbd-stop-icon, .cbd-delete.cbd-stop svg:not(.cbd-stop-icon) { display: none; }
+.cbd-delete.cbd-stop .cbd-stop-icon { display: block; }
 .cbd-delete-count { display: inline-block; font-weight: 700; font-variant-numeric: tabular-nums; }
 .cbd-delete-count[data-pop="a"] { animation: cbd-pop-a .22s ease-out; }
 .cbd-delete-count[data-pop="b"] { animation: cbd-pop-b .22s ease-out; }
