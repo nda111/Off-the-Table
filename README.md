@@ -2,6 +2,15 @@
 
 A Chrome Manifest V3 extension for selecting ChatGPT conversations and deleting them in bulk. Current version: 0.13.3.
 
+## Compatibility and affiliation
+
+- Works in Google Chrome and other Chromium-based browsers (such as Microsoft Edge and Naver Whale).
+- This is an unofficial third-party extension. It is not affiliated with, endorsed by or sponsored by OpenAI or ChatGPT. ChatGPT and Codex are trademarks of OpenAI.
+
+## Built with Claude
+
+This extension was developed with the help of [Claude](https://claude.ai), Anthropic's AI assistant.
+
 ## Install and update
 
 1. Turn on Developer mode at chrome://extensions.
