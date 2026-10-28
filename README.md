@@ -1,6 +1,10 @@
-# Off the Table for ChatGPT
+<p align="center">
+  <img src="icons/icon_128.png" width="128" height="128" alt="Off the Table logo">
+</p>
 
-Select ChatGPT conversations and Codex tasks right in the sidebar, then delete them all at once.
+<h1 align="center">Off the Table for ChatGPT</h1>
+
+<p align="center">Select ChatGPT conversations and Codex tasks right in the sidebar, then delete them all at once.</p>
 
 ## Compatibility and affiliation
 
