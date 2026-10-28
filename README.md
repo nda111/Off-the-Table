@@ -10,6 +10,7 @@
 
 - Works in Google Chrome and other Chromium-based browsers (such as Microsoft Edge and Naver Whale).
 - This is an unofficial third-party extension. It is not affiliated with, endorsed by or sponsored by OpenAI or ChatGPT. ChatGPT and Codex are trademarks of OpenAI.
+- It was made for personal use and is shared as is, without any warranty.
 
 ## Built with Claude
 
@@ -60,7 +61,24 @@ Shortcuts other than Ctrl+D don't work while you are typing in the message box; 
 
 ## Languages
 
-The extension follows ChatGPT's language setting and switches as soon as you change it. Supported: English, Korean, Japanese, Chinese (Simplified and Traditional), Spanish, Portuguese (Brazil), French, German, Italian, Russian, Indonesian, Vietnamese and Turkish. Other languages show English.
+The extension follows ChatGPT's language setting and switches as soon as you change it. Other languages show English.
+
+| Language | Native name | Code |
+| --- | --- | --- |
+| English | English | `en` |
+| Korean | 한국어 | `ko` |
+| Japanese | 日本語 | `ja` |
+| Chinese (Simplified) | 简体中文 | `zh-CN` |
+| Chinese (Traditional) | 繁體中文 | `zh-TW` |
+| Spanish | Español | `es` |
+| Portuguese (Brazil) | Português (Brasil) | `pt-BR` |
+| French | Français | `fr` |
+| German | Deutsch | `de` |
+| Italian | Italiano | `it` |
+| Russian | Русский | `ru` |
+| Indonesian | Bahasa Indonesia | `id` |
+| Vietnamese | Tiếng Việt | `vi` |
+| Turkish | Türkçe | `tr` |
 
 ## Privacy
 
