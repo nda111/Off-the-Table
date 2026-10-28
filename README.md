@@ -93,4 +93,4 @@ The extension talks only to chatgpt.com, using your existing login, to delete th
 
 ## Development
 
-Run `npm install` once, then `npm test`. Leave `package.json`, `package-lock.json`, `node_modules/`, `tests/` and `samples/` out of the store zip, and upload `store/icon_128.png` as the store icon.
+Run `npm install` once, then `npm test`. Leave `package.json`, `package-lock.json`, `node_modules/` and `tests/` out of the store zip, and upload `store/icon_128.png` as the store icon.
