@@ -1,92 +1,92 @@
 # Off the Table for ChatGPT
 
-ChatGPT 대화를 선택해 일괄 삭제하는 Chrome Manifest V3 확장 프로그램. 현재 버전: 0.13.3.
+A Chrome Manifest V3 extension for selecting ChatGPT conversations and deleting them in bulk. Current version: 0.13.3.
 
-## 설치 및 업데이트
+## Install and update
 
-1. chrome://extensions 에서 개발자 모드를 켭니다.
-2. '압축해제된 확장 프로그램 로드'로 이 폴더를 선택합니다.
-3. 확장 아이콘을 툴바에 고정합니다.
-4. 코드를 업데이트했다면 확장 카드의 새로고침을 누른 뒤 ChatGPT 페이지도 반드시 새로고침합니다.
+1. Turn on Developer mode at chrome://extensions.
+2. Choose "Load unpacked" and select this folder.
+3. Pin the extension icon to the toolbar.
+4. After updating the code, press reload on the extension card, then reload the ChatGPT page too.
 
-## 사용법
+## Usage
 
-1. ChatGPT 사이드바 상단(검색 버튼 왼쪽)의 휴지통 버튼이나 확장 아이콘을 누르면 ON, 다시 누르면 OFF입니다. 휴지통 버튼은 OFF일 때 다른 사이드바 버튼과 같은 모양이고, ON일 때 테마 색으로 표시됩니다. ON 동안 검색·사이드바 토글·ChatGPT/Codex 모드 전환·계정(프로필) 버튼은 비활성화됩니다. 감지 수는 삭제 모드를 켤 때마다 새로 세며, 끄면 선택과 함께 초기화됩니다. Codex 모드의 작업(`/remote/task_…`)도 같은 방식으로 선택·삭제할 수 있습니다(삭제 요청: `DELETE /backend-api/wham/tasks/<id>`).
-2. ON이면 채팅 영역 좌측 상단에 작업 바가 나타나고, 선택한 대화는 행 배경색으로 표시됩니다. 색은 계정의 테마(강조) 색상을 페이지에서 직접 찾아 쓰며, 라이트/다크 전환도 따라갑니다. 작업 바도 같은 배경·글자·강조색을 씁니다. 어떤 색을 골랐는지는 콘솔의 `[cbd] 테마 색:` 로그로 확인할 수 있습니다. 대화에 마우스를 올려도 더보기·고정 버튼은 나타나지 않습니다. 툴바 아이콘의 고양이 자세로 상태를 보여줍니다. 앉은 고양이는 OFF, 앞발로 치는 고양이는 ON이며, ChatGPT 화면에서는 계정 테마 색으로 칠해집니다. ChatGPT가 아닌 탭에서는 회색으로 자는 고양이가 표시됩니다. 배지는 오류(ERR)일 때만 나타납니다.
-3. 패널 상단에 '대화 10개'처럼 목록의 대화 수가, 휴지통 버튼에 선택한 수가 표시됩니다. 목록이 비어 있으면 '대화 목록이 비어 있습니다'로 표시합니다.
-4. 선택 버튼은 하나입니다. 선택이 0개면 '전체 선택', 1개 이상이면 '전체 해제'로 즉시 바뀝니다. 부분 선택 상태에서도 누르면 전체 해제합니다.
-5. '전체 선택'은 이번 페이지에서 지금까지 감지한 미삭제 대화를 선택합니다. 화면 밖으로 스크롤된 항목도 포함합니다. 휴지통 버튼(선택한 개수 표시)으로 삭제합니다.
-6. 새로 불러온 대화는 감지 수에 자동 추가되지만 자동 선택하지 않습니다. 기존 선택이 있으면 '전체 해제'를 누른 다음 '전체 선택'을 눌러 새 항목까지 포함할 수 있습니다.
-7. 삭제 모드를 끄면 선택이 초기화됩니다. 삭제 중에는 모드 전환과 선택 변경을 막습니다. 실패하거나 보류된 항목은 선택된 상태로 남습니다.
-8. 삭제 모드에서는 대화를 눌러도 이동하지 않고 선택만 바뀝니다. 이 동안 대화 링크의 주소(href)를 잠시 떼어 두기 때문에, 브라우저가 Shift/Ctrl/Alt/가운데 클릭으로 새 창·새 탭을 여는 것도 막힙니다. 모드를 끄면 주소가 복구됩니다.
-9. 삭제에 성공한 대화는 새로고침 없이 사이드바에서 접히며 사라집니다. 삭제 모드를 꺼도 숨긴 상태가 유지되고, 이후 ChatGPT가 목록을 다시 불러오면 실제로 빠집니다.
+1. The trash button at the top of the ChatGPT sidebar (left of the search button) or the extension icon turns delete mode ON; pressing it again turns it OFF. When OFF, the trash button looks like the other sidebar buttons; when ON, it shows in the theme color. While ON, the search, sidebar toggle, ChatGPT/Codex mode switch and account (profile) buttons are disabled. The detected count starts fresh each time delete mode is turned on and is cleared, along with the selection, when it is turned off. Codex tasks (`/remote/task_…`) can be selected and deleted the same way (delete request: `DELETE /backend-api/wham/tasks/<id>`).
+2. When ON, an action bar appears at the top left of the chat area, and selected conversations are shown with a tinted row background. The color is the account's theme (accent) color, read from the page itself, and follows light/dark switches. The action bar uses the same background, text and accent colors. The console log `[cbd] Theme color:` shows which color was picked. Hovering a conversation doesn't show its more/pin buttons. The toolbar icon's cat pose shows the state: a sitting cat is OFF, a swatting cat is ON, and on ChatGPT both are painted in the account's theme color. Tabs other than ChatGPT show a gray sleeping cat. The badge appears only for errors (ERR).
+3. The top of the panel shows the number of conversations in the list, such as "10 Chats", and the trash button shows how many are selected. An empty list shows "No chats in the list".
+4. There is one select button. With nothing selected it is "Select all"; with one or more selected it immediately becomes "Clear all". Pressing it with a partial selection also clears everything.
+5. "Select all" selects every undeleted conversation detected on this page so far, including ones scrolled out of view. Delete them with the trash button (which shows the selected count).
+6. Newly loaded conversations are added to the detected count automatically but are not selected. With an existing selection, press "Clear all" and then "Select all" to include the new items.
+7. Turning delete mode off clears the selection. While deleting, mode switches and selection changes are blocked. Failed or pending items stay selected.
+8. In delete mode, clicking a conversation only toggles its selection instead of opening it. During this time the conversation links' addresses (href) are set aside, so the browser also can't open a new window or tab with Shift/Ctrl/Alt/middle click. The addresses come back when the mode is turned off.
+9. Deleted conversations collapse out of the sidebar without a reload. They stay hidden after delete mode is turned off, and are actually gone once ChatGPT reloads the list.
 
-## 단축키 (삭제 모드)
+## Shortcuts (delete mode)
 
-패널 우측 상단의 `?` 버튼에 마우스를 올리거나 누르면 아래 내용을 볼 수 있습니다.
+Hover or press the `?` button at the top right of the panel to see the list below.
 
-5개 이상을 삭제하면 패널 안에서 한 번 더 확인합니다(Delete/삭제 버튼으로 진행, Esc/취소로 돌아가기). 4개 이하는 바로 삭제됩니다.
+Deleting five or more asks once more inside the panel (Delete or the delete button to proceed, Esc or cancel to go back). Four or fewer are deleted right away.
 
-| 조작 | 동작 |
+| Input | Action |
 | --- | --- |
-| 클릭 | 누르는 즉시 해당 대화 선택 토글 |
-| 드래그 | 누른 대화의 새 상태(선택/해제)를 드래그한 범위 전체에 적용. 되돌아가면 범위에서 빠진 대화는 원래 상태로 복구. 사이드바 위·아래 끝에서는 자동 스크롤 |
-| Shift+클릭 | 마지막으로 조작한 대화부터 클릭한 대화까지 같은 상태로 맞춤 |
-| Ctrl+D (Mac: ⌘D) | 삭제 모드 켜기/끄기. 입력 중에도 동작하며, ChatGPT에서만 브라우저의 북마크 단축키 대신 쓰입니다 |
-| Shift+End | 마지막으로 조작한 대화부터 목록 끝(오래된 대화)까지 같은 상태로 |
-| Shift+Home | 마지막으로 조작한 대화부터 목록 처음까지 같은 상태로 |
-| Ctrl·Cmd+A | 목록의 대화 전체 선택 |
-| Esc | 선택이 있으면 전체 해제, 없으면 삭제 모드 종료 |
-| Delete | 선택 삭제 (확인 창 표시) |
-| Space / Enter | 키보드 포커스가 있는 대화 선택 토글 (Shift+Space는 범위) |
+| Click | Toggles that conversation's selection as soon as it is pressed |
+| Drag | Applies the pressed conversation's new state (selected/cleared) to the whole dragged range. Conversations that leave the range when you drag back return to their previous state. Scrolls automatically at the top and bottom edges of the sidebar |
+| Shift+click | Sets everything from the last changed conversation to the clicked one to the same state |
+| Ctrl+D (Mac: ⌘D) | Turns delete mode on/off. Works while typing, and replaces the browser's bookmark shortcut on ChatGPT only |
+| Shift+End | From the last changed conversation to the end of the list (oldest) |
+| Shift+Home | From the last changed conversation to the start of the list |
+| Ctrl/Cmd+A | Selects every conversation in the list |
+| Esc | Clears the selection if there is one, otherwise leaves delete mode |
+| Delete | Deletes the selection (with confirmation) |
+| Space / Enter | Toggles the keyboard-focused conversation (Shift+Space for a range) |
 
-- 입력창에 커서가 있을 때는 단축키가 동작하지 않습니다. 사이드바를 한 번 클릭한 뒤 사용하세요.
-- ChatGPT의 대화상자나 메뉴가 화면에 열려 있으면 Esc는 ChatGPT가 처리합니다.
-- 터치에서는 스크롤과 구분하기 위해 드래그 선택 없이 탭으로만 토글합니다.
-- 드래그와 Shift+클릭 범위는 현재 사이드바에 표시된 순서 기준입니다. 마지막 조작 항목이 스크롤로 사라졌으면 단일 토글로 동작합니다.
+- Shortcuts don't work while the cursor is in the input box. Click the sidebar once first.
+- When a ChatGPT dialog or menu is open, ChatGPT handles Esc.
+- On touch, a tap toggles; there is no drag selection, so it isn't confused with scrolling.
+- Drag and Shift+click ranges follow the order currently shown in the sidebar. If the last changed item has scrolled away, they act as a single toggle.
 
-## 언어
+## Languages
 
-패널, 툴팁, 확인 문구, 결과 메시지, 툴바 아이콘 설명은 ChatGPT의 언어 설정(`<html lang>`)을 따르며, 설정을 바꾸면 새로고침 없이 바로 반영됩니다. 값이 없으면 브라우저 언어, 지원하지 않는 언어면 영어로 표시합니다. 확장 이름과 스토어 설명은 브라우저 언어를 따릅니다(`_locales/`).
+The panel, tooltips, confirmation text, result messages and toolbar icon title follow ChatGPT's language setting (`<html lang>`), and a change applies immediately without a reload. Without a value they use the browser language, and an unsupported language shows English. The extension name and store description follow the browser language (`_locales/`).
 
-지원 언어: 한국어, 영어, 일본어, 중국어(간체·번체), 스페인어, 포르투갈어(브라질), 프랑스어, 독일어, 이탈리아어, 러시아어, 인도네시아어, 베트남어, 튀르키예어.
+Supported languages: Korean, English, Japanese, Chinese (Simplified and Traditional), Spanish, Portuguese (Brazil), French, German, Italian, Russian, Indonesian, Vietnamese, Turkish.
 
-문구는 `i18n.js` 한곳에 있습니다. `{n}` 같은 자리 표시와 언어별 복수형(`Intl.PluralRules`)을 쓰므로 "대화 10개", "10 Chats", "1 Chat", "5 чатов"처럼 언어마다 어순과 형태가 다를 수 있습니다. 언어를 추가할 때는 `MESSAGES`에 항목을 더하고 `_locales/`에 폴더를 만들면 되며, `tests/i18n.test.js`가 빠진 문구와 자리 표시 불일치를 검사합니다.
+All text lives in `i18n.js`. It uses placeholders such as `{n}` and per-language plurals (`Intl.PluralRules`), so word order and forms can differ by language: "대화 10개", "10 Chats", "1 Chat", "5 чатов". To add a language, add an entry to `MESSAGES` and a folder under `_locales/`; `tests/i18n.test.js` checks for missing messages and mismatched placeholders.
 
-## 삭제 속도와 요청 제한
+## Delete speed and rate limits
 
-- 동시에 최대 3개 요청을 처리합니다. 슬롯이 비면 다음 대화를 처리하는 워커 풀 방식입니다.
-- 각 워커의 요청 사이에 500ms 간격을 둡니다. content.js의 DELETE_CONCURRENCY와 DELETE_DELAY_MS로 조절합니다.
-- 429 응답이면 모든 워커가 함께 대기합니다. Retry-After를 우선 적용하고, 없으면 지수 백오프를 사용합니다.
-- 재시도는 항목당 최대 3회입니다. 제한이 지속되거나 401/403이 발생하면 새 요청을 중단하고 진행 중인 요청만 정리합니다.
-- 비공식 API이므로 동시 처리의 안전성을 보장하지는 않습니다. 코드상 최대값은 5입니다. 실제 제한은 서버 상황에 따라 달라집니다.
+- Up to three requests run at once. It is a worker pool: when a slot frees up, the next conversation starts.
+- Each worker waits 500 ms between requests. Adjust with DELETE_CONCURRENCY and DELETE_DELAY_MS in content.js.
+- On a 429 response, every worker waits together. Retry-After is used first, otherwise exponential backoff.
+- Each item is retried at most three times. If limiting continues or a 401/403 occurs, no new requests are started and only the ones in flight are finished.
+- This is an unofficial API, so concurrent deletion isn't guaranteed to be safe. The code caps it at 5. Actual limits depend on the server.
 
-## 파일 구성
+## Files
 
-- manifest.json: 확장 설정과 스크립트 로드 순서
-- background.js: 아이콘 직접 토글, 연결 확인, 주입 복구, 툴바 아이콘(상태별·테마 색)과 오류 배지 갱신
-- icons/: 대표 아이콘과 툴바 상태 아이콘(투명 배경 검은 단색, 실행 중에 색을 입힘)
-- store/icon_128.png: 웹 스토어 등록용 아이콘. 스토어 이미지 규격(그림 96×96, 사방 16px 투명 여백)을 따릅니다. manifest 아이콘은 확장 관리 페이지에서 크게 보이도록 여백 없이 꽉 채웁니다.
-- content.js: 사이드바 감지, 선택 UI, 인증 및 삭제 API 연결
-- delete-queue.js: 동시 삭제 큐와 요청 제한 처리
-- i18n.js: 언어별 문구와 복수형 처리
-- _locales/: 확장 이름·설명·툴바 기본 문구 (브라우저 언어)
-- panel.css: 선택 색상, 삭제 모드 표시, 작업 바 스타일
-- tests/: 실제 네트워크를 사용하지 않는 테스트. 처음 한 번 `npm install` 후 `npm test`로 전부 실행합니다(Node.js와 jsdom 사용, 확장 자체에는 의존성 없음). `samples/*.html`(저장한 ChatGPT 페이지, 커밋하지 않음)이 있으면 그 페이지들에서도 확인합니다.
-- package.json: 테스트 도구 설정. 스토어용 압축 파일에는 package.json, package-lock.json, node_modules/, tests/, samples/를 넣지 않습니다.
+- manifest.json: extension settings and script load order
+- background.js: toggling from the icon, connection checks, injection recovery, toolbar icon (per state, in the theme color) and error badge updates
+- icons/: the main icon and the toolbar state icons (solid black on transparent, tinted at runtime)
+- store/icon_128.png: the icon for the Web Store listing. It follows the store image guideline (96×96 artwork with 16px of transparent padding on each side). The manifest icons fill the whole canvas so they look full-size on the extensions page.
+- content.js: sidebar detection, selection UI, authentication and the delete API
+- delete-queue.js: concurrent delete queue and rate-limit handling
+- i18n.js: per-language messages and plurals
+- _locales/: extension name, description and default toolbar title (browser language)
+- panel.css: selection colors, delete mode styling, action bar styles
+- tests/: tests that don't use the real network. Run `npm install` once, then `npm test` runs them all (uses Node.js and jsdom; the extension itself has no dependencies). If `samples/*.html` (saved ChatGPT pages, not committed) exist, they are checked too.
+- package.json: test tooling. Leave package.json, package-lock.json, node_modules/, tests/ and samples/ out of the store zip.
 
-## 문제 해결
+## Troubleshooting
 
-- 반응이 없으면 확장과 ChatGPT 페이지를 모두 새로고침하세요. 확장을 새로고침하면 페이지에 남은 이전 스크립트는 다음 조작 때 스스로 정리되고, 아이콘을 누르면 새 스크립트가 선택 상태를 이어받아 다시 주입됩니다.
-- ChatGPT에서 발생한 실제 연결 오류는 아이콘의 ERR 배지와 마우스를 올렸을 때 나타나는 툴팁에 표시됩니다. chrome://extensions, whale://extensions 및 일반 사이트는 미지원 페이지이므로 예외·스크립트 주입·ERR 표시 없이 무시합니다.
-- '대화 목록이 비어 있습니다'로 나오면 사이드바를 열거나 스크롤해 대화 목록을 불러오세요.
-- 전체 계정의 대화를 API로 미리 가져오지는 않습니다. 감지 수는 이번 페이지에서 사이드바에 나타난 고유 대화 기준이며 새로고침하면 초기화됩니다.
-- /backend-api/*는 비공식 API입니다. 실제 요청 형식이 바뀌면 대응이 필요합니다. 처음에는 테스트용 대화로 시험하세요.
+- If nothing responds, reload both the extension and the ChatGPT page. After reloading the extension, the old script left on the page cleans itself up on the next interaction, and pressing the icon injects the new script, which takes over the selection state.
+- Real connection errors on ChatGPT show as an ERR badge on the icon and in the tooltip that appears on hover. chrome://extensions, whale://extensions and other sites are unsupported pages and are ignored without exceptions, script injection or an ERR badge.
+- If it shows "No chats in the list", open or scroll the sidebar to load the conversation list.
+- Conversations for the whole account are not fetched from the API in advance. The detected count is the unique conversations that appeared in the sidebar on this page, and resets on reload.
+- /backend-api/* is an unofficial API. Changes to the actual request format will need updates. Try it on test conversations first.
 
-## Whale 듀얼탭
+## Whale dual tabs
 
-- 확장 아이콘이 전달한 탭 ID만 사용하지 않고, 같은 창의 활성 탭들을 확인합니다. 두 화면이 ChatGPT라면 각 화면의 현재 포커스 또는 최근의 실제 클릭·키 입력·포커스 기록으로 대상을 보정합니다.
-- 포커스 기록은 각 페이지에 남아 있으므로 서비스 워커가 잠들었다 깨어나도 사용할 수 있습니다. 새로고침하면 기록이 초기화되니 조작할 화면을 한 번 클릭해 주세요.
-- 두 화면을 구분할 근거가 없거나, 한쪽이 다른 사이트여서 포커스 기록을 읽을 수 없으면 임의로 왼쪽을 조작하지 않고 중단합니다.
-- 사이드바의 휴지통 버튼은 누른 화면에만 적용되므로 듀얼탭 대상을 브라우저가 잘못 알려줘도 사용할 수 있습니다. 사이드바가 닫혀 있거나 설정 화면처럼 사이드바 헤더가 없으면 확장 아이콘으로 켜고 끕니다.
-- Whale 실제 듀얼탭 환경은 별도 확인이 필요합니다. 업데이트 후 확장과 듀얼탭 양쪽 ChatGPT 페이지를 모두 새로고침하세요.
+- Instead of using only the tab ID passed by the extension icon, it checks the active tabs in the same window. If both panes are ChatGPT, the target is corrected using each pane's current focus or its most recent real click, key press or focus.
+- Focus history is kept in each page, so it still works after the service worker sleeps and wakes. A reload clears the history, so click the pane you want to use once.
+- If there is nothing to tell the two panes apart, or one is another site whose focus history can't be read, it stops instead of acting on the left pane.
+- The sidebar trash button applies only to the pane where it is pressed, so it works even if the browser reports the wrong dual-tab target. When the sidebar is closed or there is no sidebar header, as on the settings page, use the extension icon to toggle.
+- The real Whale dual-tab environment needs separate checking. After updating, reload the extension and the ChatGPT pages in both dual-tab panes.

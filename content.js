@@ -793,7 +793,7 @@
     }
     const used = [...counts].sort((a, b) => b[1] - a[1])[0];
     if (used) return { ...used[0], via: `used by ${used[1]} elements` };
-    console.log("[cbd] 테마 팔레트는 찾았지만 선택된 색을 알 수 없음:", palette.map(item => item.name).join(", "));
+    console.log("[cbd] Theme palette found, but the selected color is unknown:", palette.map(item => item.name).join(", "));
     return null;
   }
 
@@ -848,8 +848,8 @@
     if (signature !== themeSignature) {
       themeSignature = signature;
       themeStyle.textContent = `:root { ${signature} }`;
-      console.log("[cbd] 테마 색:", accent ? `${accent.name} = ${css(accent.color)} (${accent.via})` : "강조색을 찾지 못해 글자색 사용",
-        `· ${light ? "라이트" : "다크"} (배경 ${css(surface)})`);
+      console.log("[cbd] Theme color:", accent ? `${accent.name} = ${css(accent.color)} (${accent.via})` : "no accent found, using the text color",
+        `· ${light ? "light" : "dark"} (background ${css(surface)})`);
       publish();
     }
     if (!themeStyle.isConnected) (document.head || document.documentElement).append(themeStyle);
