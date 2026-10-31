@@ -215,7 +215,7 @@ chrome.action.onClicked.addListener(tab => {
 
 // A fresh install opens ChatGPT, where a one-time spotlight on the sidebar switch explains
 // what to do. Updates and reloads open nothing. The toolbar icon's right-click menu gets
-// an item to show that intro again (menus persist, so it is (re)created here).
+// a "Help" item that shows that intro again (menus persist, so it is (re)created here).
 const INTRO_MENU = "cbd-show-intro";
 chrome.runtime.onInstalled?.addListener(details => {
   if (details?.reason === "install") chrome.tabs.create({ url: "https://chatgpt.com/" })?.catch?.(() => {});

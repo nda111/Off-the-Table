@@ -36,7 +36,7 @@ It makes no other network requests and does not load remote code.
 
 - **Access to chatgpt.com:** Used to add the selection interface to the ChatGPT sidebar and to send delete requests for the items you choose.
 - **scripting:** Used to add the extension to ChatGPT tabs that were already open before the extension was installed or updated.
-- **contextMenus:** Used to add a "Show the intro again" item to the menu you get by right-clicking the toolbar icon.
+- **contextMenus:** Used to add a "Help" item to the menu you get by right-clicking the toolbar icon.
 
 ## Children
 

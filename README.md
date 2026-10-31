@@ -42,7 +42,7 @@ To update, replace the folder, press reload on the extension card, and reload Ch
 
 The cat on the toolbar shows the state: sitting means delete mode is off, swatting means it is on, and a gray sleeping cat means the tab isn't ChatGPT. A red **ERR** badge means something went wrong; hover the icon to see the message.
 
-When you first install the extension, ChatGPT opens and the page dims around the trash button to show where to start. To see that again, right-click the toolbar icon and choose **Show the intro again**.
+When you first install the extension, ChatGPT opens and the page dims around the trash button to show where to start. To see that again, right-click the toolbar icon and choose **Help**.
 
 ## Shortcuts
 

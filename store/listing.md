@@ -68,7 +68,7 @@ Used to add the extension's content script and styles to chatgpt.com tabs that w
 `contextMenus`
 
 ```
-Adds one item, "Show the intro again", to the menu shown when the user right-clicks the extension's toolbar icon. It replays the short on-page introduction on chatgpt.com. No other menus are added.
+Adds one item, "Help", to the menu shown when the user right-clicks the extension's toolbar icon. It replays the short on-page introduction on chatgpt.com. No other menus are added.
 ```
 
 Host permission `https://chatgpt.com/*`
