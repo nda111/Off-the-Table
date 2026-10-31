@@ -148,13 +148,20 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
     initialize(document, chromeMock, isolated, fakeFetch, () => true);
     await settle();
     assert(intro() && !intro().hidden && intro().textContent.startsWith("여기서 대화를 한꺼번에 삭제할 수 있습니다")
-      && intro().querySelector("kbd").textContent === "Ctrl+D", "A first visit shows the intro chip under the switch");
+      && intro().querySelector("kbd").textContent === "Ctrl+D", "A first visit spotlights the switch with a caption");
     side = header.querySelector(".cbd-side-switch");
     side.dispatchEvent(new Event("pointerenter"));
     await new Promise(resolve => setTimeout(resolve, 350));
     assert(!document.getElementById("cbd-side-tip") || document.getElementById("cbd-side-tip").hidden, "The hover tip stays out of the intro's way");
     intro().querySelector(".cbd-intro-close").click();
     assert(intro().hidden && localStorage.getItem("cbd:intro-seen"), "Closing the intro hides it for good");
+    send({ type: "cbd-show-intro" });
+    assert(!intro().hidden && !localStorage.getItem("cbd:intro-seen"), "The toolbar menu brings the intro back");
+    document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    assert(intro().hidden && localStorage.getItem("cbd:intro-seen"), "Clicking anywhere retires the spotlight");
+    send({ type: "cbd-show-intro" });
+    document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    assert(intro().hidden, "...and so does Esc");
     // Chip tooltip like ChatGPT's: label plus shortcut, after a short hover delay.
     assert(!side.hasAttribute("title"), "No native title tooltip on the switch");
     side.dispatchEvent(new Event("pointerenter"));

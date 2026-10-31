@@ -220,13 +220,17 @@
   const sideTip = el("div", { className: "cbd-tip", id: "cbd-side-tip", role: "tooltip", hidden: true }, [sideTipLabel, sideTipKeys]);
   sideBtn.setAttribute("aria-describedby", "cbd-side-tip");
   let sideTipTimer = 0;
-  // A one-time callout under the switch that introduces the extension. It stays until
-  // it is closed or delete mode is turned on, and is not shown again after that.
+  // A one-time spotlight that introduces the extension: the page darkens from the edges
+  // in toward the switch, with a caption underneath. It stays until it is closed, the
+  // page is clicked or delete mode is turned on, and is not shown again after that
+  // (the toolbar icon's menu can bring it back).
   const INTRO_STORAGE = "cbd:intro-seen";
   const introText = el("span");
   const introKeys = el("kbd");
   const introClose = el("button", { type: "button", className: "cbd-intro-close", textContent: "×" });
-  const intro = el("div", { className: "cbd-tip cbd-intro", role: "note", hidden: true }, [introText, introKeys, introClose]);
+  const introSpot = el("div", { className: "cbd-intro-spot" });
+  const introCaption = el("div", { className: "cbd-intro-caption" }, [introText, introKeys, introClose]);
+  const intro = el("div", { className: "cbd-intro", role: "note", hidden: true }, [introSpot, introCaption]);
   let introSeen = false;
   try { introSeen = Boolean(view.localStorage.getItem(INTRO_STORAGE)); } catch { introSeen = true; }
   // Light/dark of the page, and ChatGPT tooltip colors learned per mode (see learnTipStyle).
@@ -1211,7 +1215,6 @@
     const style = { ...TIP_DEFAULTS[mode], ...learned };
     for (const [name, value] of Object.entries(style)) {
       sideTip.style.setProperty(`--cbd-tip-${name}`, value);
-      intro.style.setProperty(`--cbd-tip-${name}`, value);
     }
   }
   function learnTipStyle(tip) {
@@ -1241,14 +1244,13 @@
     setText(sideTipKeys, toggleKeys());
     if (!sideTip.hidden) placeSideTip();
   }
-  // Centers a chip under the switch, kept inside the window.
-  function placeUnderSwitch(node) {
-    const anchor = sideBtn.getBoundingClientRect(), tip = node.getBoundingClientRect();
+  // Centers the chip under the switch, kept inside the window.
+  function placeSideTip() {
+    const anchor = sideBtn.getBoundingClientRect(), tip = sideTip.getBoundingClientRect();
     const left = Math.min(Math.max(8, anchor.left + anchor.width / 2 - tip.width / 2), view.innerWidth - tip.width - 8);
-    node.style.setProperty("--cbd-tip-left", `${Math.round(left)}px`);
-    node.style.setProperty("--cbd-tip-top", `${Math.round(anchor.bottom + 6)}px`);
+    sideTip.style.setProperty("--cbd-tip-left", `${Math.round(left)}px`);
+    sideTip.style.setProperty("--cbd-tip-top", `${Math.round(anchor.bottom + 6)}px`);
   }
-  function placeSideTip() { placeUnderSwitch(sideTip); }
   function renderIntro(docked) {
     const show = !introSeen && docked && !state.enabled && Boolean(document.body);
     if (show && !intro.isConnected) document.body.append(intro);
@@ -1257,7 +1259,19 @@
     setText(introText, t("introTip"));
     setText(introKeys, toggleKeys());
     introClose.setAttribute("aria-label", t("introClose"));
-    placeUnderSwitch(intro);
+    placeIntro();
+  }
+  // The spotlight hugs the switch; the caption sits under it, kept inside the window.
+  function placeIntro() {
+    const anchor = sideBtn.getBoundingClientRect(), caption = introCaption.getBoundingClientRect();
+    const pad = 4;
+    intro.style.setProperty("--cbd-spot-x", `${Math.round(anchor.left - pad)}px`);
+    intro.style.setProperty("--cbd-spot-y", `${Math.round(anchor.top - pad)}px`);
+    intro.style.setProperty("--cbd-spot-w", `${Math.round(anchor.width + pad * 2)}px`);
+    intro.style.setProperty("--cbd-spot-h", `${Math.round(anchor.height + pad * 2)}px`);
+    const left = Math.min(Math.max(8, anchor.left - pad), view.innerWidth - caption.width - 8);
+    intro.style.setProperty("--cbd-caption-x", `${Math.round(left)}px`);
+    intro.style.setProperty("--cbd-caption-y", `${Math.round(anchor.bottom + pad + 10)}px`);
   }
   function dismissIntro() {
     if (introSeen) return;
@@ -1265,8 +1279,18 @@
     try { view.localStorage.setItem(INTRO_STORAGE, "1"); } catch { /* storage blocked */ }
     intro.hidden = true;
   }
+  // Asked for again from the toolbar icon's menu. Delete mode is left so the switch shows.
+  function replayIntro() {
+    introSeen = false;
+    try { view.localStorage.removeItem(INTRO_STORAGE); } catch { /* storage blocked */ }
+    if (state.enabled && !state.busy) setEnabled(false);
+    else render();
+  }
   listen(introClose, "click", dismissIntro);
-  listen(view, "resize", () => { if (!intro.hidden) placeUnderSwitch(intro); });
+  // The darkness doesn't block the page: any click (including on the switch) or Esc retires it.
+  listen(view, "pointerdown", () => { if (!intro.hidden) dismissIntro(); }, true);
+  listen(view, "keydown", event => { if (event.key === "Escape" && !intro.hidden) dismissIntro(); }, true);
+  listen(view, "resize", () => { if (!intro.hidden) placeIntro(); });
   function showSideTip(delay) {
     clearTimeout(sideTipTimer);
     sideTipTimer = setTimeout(() => {
@@ -1406,6 +1430,7 @@
     if (message.type === "cbd-focus-state") { sendResponse(getFocusState()); return; }
     // Kept for older background scripts; the sidebar switch is always page-local now.
     if (message.type === "cbd-show-local-toggle") { sendResponse(getStatus()); return; }
+    if (message.type === "cbd-show-intro") { replayIntro(); sendResponse(getStatus()); return; }
     if (!["cbd-status", "cbd-set-mode", "cbd-toggle"].includes(message.type)) return;
     try {
       if (message.type === "cbd-set-mode") {

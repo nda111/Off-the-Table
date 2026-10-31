@@ -23,7 +23,7 @@
     const states = new Map(specs.map(t => [t.id, { enabled: false, count: 7, ...config.states?.[t.id] }]));
     const log = [], timers = new Map(), timerHistory = [];
     const DEFAULT = Symbol("default response");
-    let timerId = 0, onClick, onMessage, onInstalled;
+    let timerId = 0, onClick, onMessage, onInstalled, onMenu, onUpdated;
     const h = { log, timers, timerHistory, states, DEFAULT, pending };
     const record = (kind, data) => { log.push({ kind, ...data }); };
     const chrome = {
@@ -39,8 +39,14 @@
         onInstalled: { addListener(fn) { onInstalled = fn; } },
         getURL: path => "chrome-extension://test/" + path,
       },
+      contextMenus: {
+        removeAll(done) { record("menus-cleared", {}); done(); },
+        create(data, done) { record("menu", data); done?.(); },
+        onClicked: { addListener(fn) { onMenu = fn; } },
+      },
       tabs: {
-        async create(data) { record("create", data); return { id: 99, ...data }; },
+        onUpdated: { addListener(fn) { onUpdated = fn; } },
+        async create(data) { record("create", data); return { id: config.createdId ?? 99, ...data }; },
         async query(query) {
           record("query", { query });
           equal(Object.keys(query).sort(), ["active", "windowId"], "Query must use explicit active/window scope");
@@ -67,6 +73,7 @@
           if (message.type === "cbd-status") return { ok: true, protocol: P, ...state };
           if (message.type === "cbd-focus-state") return config.focus?.[tabId] || focus(false);
           if (message.type === "cbd-show-local-toggle") return { ok: true, protocol: P };
+          if (message.type === "cbd-show-intro") return { ok: true, protocol: P, ...state };
           if (message.type === "cbd-set-mode") {
             assert(typeof message.enabled === "boolean", "Mode payload must be boolean");
             state.enabled = message.enabled;
@@ -99,6 +106,8 @@
     Object.assign(h, {
       click(clickedTab = specs[0]) { onClick(clickedTab); },
       install(details) { onInstalled?.(details); },
+      menu(info, menuTab) { onMenu(info, menuTab); },
+      updated(tabId, changeInfo, updatedTab) { onUpdated(tabId, changeInfo, updatedTab); },
       request(message, sender = {}) {
         let keepAlive;
         const result = new Promise(resolve => { keepAlive = onMessage(message, sender, resolve); });
@@ -369,6 +378,24 @@
     equal(h.log.filter(e => e.kind === "create"), [], "No tab on update");
     h.install({ reason: "install" }); await flush();
     equal(h.log.filter(e => e.kind === "create").map(e => e.url), ["https://chatgpt.com/"], "One ChatGPT tab on install");
+    const menus = h.log.filter(e => e.kind === "menu");
+    assert(menus.length === 3 && menus.every(m => m.id === "cbd-show-intro" && m.contexts.join() === "action" && m.title),
+      "Every install or update (re)creates the toolbar menu item");
+  });
+  test("the toolbar menu shows the intro in ChatGPT, or opens ChatGPT to show it", async source => {
+    const h = harness(source, { tabs: [tab(LEFT), tab(RIGHT, { url: "https://example.com/" }), tab(THIRD, { active: false })], createdId: THIRD });
+    const intros = () => h.log.filter(e => e.kind === "send" && e.message.type === "cbd-show-intro").map(e => e.tabId);
+    h.menu({ menuItemId: "other" }, tab(LEFT)); await flush();
+    equal(intros(), [], "Other menu items are ignored");
+    h.menu({ menuItemId: "cbd-show-intro" }, tab(LEFT)); await flush();
+    equal(intros(), [LEFT], "On ChatGPT the intro shows in that tab");
+    h.menu({ menuItemId: "cbd-show-intro" }, tab(RIGHT, { url: "https://example.com/" })); await flush();
+    equal(h.log.filter(e => e.kind === "create").map(e => e.url), ["https://chatgpt.com/"], "Elsewhere it opens ChatGPT");
+    h.updated(THIRD, { status: "loading" }, tab(THIRD)); await flush();
+    equal(intros(), [LEFT], "...and waits for the page to load");
+    h.updated(THIRD, { status: "complete" }, tab(THIRD)); await flush();
+    h.updated(THIRD, { status: "complete" }, tab(THIRD)); await flush();
+    equal(intros(), [LEFT, THIRD], "...then shows the intro there once");
   });
   test("all unsupported dual panes stay quiet without local helpers", async source => {
     const h = dual(source, { tabs: [tab(LEFT, { url: "chrome://extensions/" }), tab(RIGHT, { url: "https://example.com/" })] });
