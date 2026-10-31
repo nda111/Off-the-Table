@@ -7,6 +7,10 @@
 <p align="center">Select ChatGPT conversations and Codex tasks right in the sidebar, then delete them all at once.<br>
   A free, open-source alternative to paid bulk-delete extensions.</p>
 
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/off-the-table-for-chatgpt/nbipdiaanefbmjkhfdkhnhacccmbljok"><img src="https://img.shields.io/chrome-web-store/v/nbipdiaanefbmjkhfdkhnhacccmbljok?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white" alt="Get it on the Chrome Web Store"></a>
+</p>
+
 ## Compatibility and affiliation
 
 - Works in Google Chrome and other Chromium-based browsers (such as Microsoft Edge and Naver Whale).
@@ -19,12 +23,16 @@ This extension was developed with the help of [Claude](https://claude.ai), Anthr
 
 ## Install
 
+Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/off-the-table-for-chatgpt/nbipdiaanefbmjkhfdkhnhacccmbljok) and click **Add to Chrome**. ChatGPT opens and shows where to start. Updates install automatically.
+
+To install from source instead:
+
 1. Open `chrome://extensions` and turn on **Developer mode**.
 2. Click **Load unpacked** and choose this folder.
 3. Pin the extension to the toolbar.
 4. Reload any ChatGPT tabs that were already open.
 
-To update, replace the folder, press reload on the extension card, and reload ChatGPT.
+To update a source install, replace the folder, press reload on the extension card, and reload ChatGPT.
 
 ## How to use
 
