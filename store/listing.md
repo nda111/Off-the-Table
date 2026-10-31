@@ -20,7 +20,7 @@ Clean up your ChatGPT sidebar in seconds. Off the Table lets you select conversa
 HOW IT WORKS
 1. Turn on delete mode with the trash button in the sidebar, the toolbar icon, or Ctrl+D (⌘D on Mac).
 2. Click conversations to select them. Selected rows are tinted with your ChatGPT theme color.
-3. Press the delete button. Deleting five or more asks for confirmation first.
+3. Press the delete button. Deleting five or more asks for confirmation first. Press it again (or Esc) to stop.
 
 FEATURES
 • Fast selection: click, drag, Shift+click, Shift+End/Home and Select all
@@ -29,6 +29,7 @@ FEATURES
 • Matches ChatGPT's theme color, light/dark mode and tooltips
 • Available in 14 languages and follows ChatGPT's language setting
 • Toolbar icon shows whether delete mode is on, off or unavailable
+• A short on-page intro on first install; right-click the toolbar icon and choose Help to see it again
 
 PRIVACY
 The extension talks only to chatgpt.com, using your existing login, to delete the items you choose. It has no servers, analytics or tracking, and does not collect or share any data.
