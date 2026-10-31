@@ -23,7 +23,7 @@
     const states = new Map(specs.map(t => [t.id, { enabled: false, count: 7, ...config.states?.[t.id] }]));
     const log = [], timers = new Map(), timerHistory = [];
     const DEFAULT = Symbol("default response");
-    let timerId = 0, onClick, onMessage;
+    let timerId = 0, onClick, onMessage, onInstalled;
     const h = { log, timers, timerHistory, states, DEFAULT, pending };
     const record = (kind, data) => { log.push({ kind, ...data }); };
     const chrome = {
@@ -34,8 +34,13 @@
         async setTitle(data) { record("title", data); },
         async setIcon(data) { record("icon", { tabId: data.tabId, state: (data.path?.[16] || "").match(/toolbar_(\w+?)_16/)?.[1] }); }
       },
-      runtime: { onMessage: { addListener(fn) { assert(!onMessage, "One runtime listener"); onMessage = fn; } }, getURL: path => "chrome-extension://test/" + path },
+      runtime: {
+        onMessage: { addListener(fn) { assert(!onMessage, "One runtime listener"); onMessage = fn; } },
+        onInstalled: { addListener(fn) { onInstalled = fn; } },
+        getURL: path => "chrome-extension://test/" + path,
+      },
       tabs: {
+        async create(data) { record("create", data); return { id: 99, ...data }; },
         async query(query) {
           record("query", { query });
           equal(Object.keys(query).sort(), ["active", "windowId"], "Query must use explicit active/window scope");
@@ -93,6 +98,7 @@
     assert(typeof onClick === "function" && typeof onMessage === "function", "Actual background listeners installed");
     Object.assign(h, {
       click(clickedTab = specs[0]) { onClick(clickedTab); },
+      install(details) { onInstalled?.(details); },
       request(message, sender = {}) {
         let keepAlive;
         const result = new Promise(resolve => { keepAlive = onMessage(message, sender, resolve); });
@@ -356,6 +362,13 @@
       equal(h.modes(), [], "No toggle on " + url);
       equal(h.log.filter(e => ["send", "script", "css", "badge", "title", "color"].includes(e.kind)), [], "No content or error UI on " + url);
     }
+  });
+  test("a fresh install opens ChatGPT; updates open nothing", async source => {
+    const h = harness(source);
+    h.install({ reason: "update", previousVersion: "1.0.0" }); h.install({ reason: "chrome_update" }); await flush();
+    equal(h.log.filter(e => e.kind === "create"), [], "No tab on update");
+    h.install({ reason: "install" }); await flush();
+    equal(h.log.filter(e => e.kind === "create").map(e => e.url), ["https://chatgpt.com/"], "One ChatGPT tab on install");
   });
   test("all unsupported dual panes stay quiet without local helpers", async source => {
     const h = dual(source, { tabs: [tab(LEFT, { url: "chrome://extensions/" }), tab(RIGHT, { url: "https://example.com/" })] });

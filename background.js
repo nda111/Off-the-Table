@@ -213,6 +213,12 @@ chrome.action.onClicked.addListener(tab => {
     });
 });
 
+// A fresh install opens ChatGPT, where a one-time chip under the sidebar switch explains
+// what to do. Updates and reloads open nothing.
+chrome.runtime.onInstalled?.addListener(details => {
+  if (details?.reason === "install") chrome.tabs.create({ url: "https://chatgpt.com/" })?.catch?.(() => {});
+});
+
 chrome.tabs.onRemoved?.addListener(tabId => { tabThemes.delete(tabId); tabLocales.delete(tabId); tabModes.delete(tabId); });
 
 // A tab that leaves ChatGPT gets the sleeping cat back (its URL is only visible to us on
