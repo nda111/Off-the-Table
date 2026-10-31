@@ -42,6 +42,36 @@ PLEASE NOTE
 Source code: https://github.com/nda111/Off-the-Table
 ```
 
+**Description, Korean** (add 한국어 in the listing's language menu; the summary comes from `_locales/ko`):
+
+```
+ChatGPT 사이드바를 몇 초 만에 정리하세요. Off the Table은 사이드바에서 바로 대화와 Codex 작업을 골라 한 번에 삭제할 수 있게 해 줍니다. 유료 일괄 삭제 확장 프로그램을 대신할 수 있는 무료 오픈소스 확장입니다.
+
+사용 방법
+1. 사이드바의 휴지통 버튼, 툴바 아이콘 또는 Ctrl+D(Mac은 ⌘D)로 삭제 모드를 켭니다.
+2. 대화를 클릭해 선택합니다. 선택한 대화는 ChatGPT 테마 색으로 표시됩니다.
+3. 삭제 버튼을 누릅니다. 5개 이상 삭제할 때는 먼저 확인을 받습니다. 삭제 중에 버튼을 다시 누르거나 Esc를 누르면 멈춥니다.
+
+기능
+• 빠른 선택: 클릭, 드래그, Shift+클릭, Shift+End/Home, 전체 선택
+• ChatGPT 대화와 Codex 작업 모두 지원
+• 요청 제한에 걸리지 않도록 몇 개씩 나눠 삭제하고, 실패한 항목은 선택된 채로 남아 다시 시도할 수 있음
+• ChatGPT의 테마 색, 라이트/다크 모드, 툴팁 모양에 맞춰 표시
+• 14개 언어 지원, ChatGPT 언어 설정을 그대로 따름
+• 툴바 아이콘으로 삭제 모드가 켜졌는지, 꺼졌는지, 사용할 수 없는지 표시
+• 처음 설치하면 화면에서 사용법을 짧게 안내하고, 툴바 아이콘을 우클릭해 도움말을 누르면 다시 볼 수 있음
+
+개인정보
+이 확장은 기존 로그인 정보를 사용해 chatgpt.com과만 통신하며, 선택한 항목을 삭제하는 데에만 씁니다. 서버, 분석 도구, 추적 기능이 없고 어떤 데이터도 수집하거나 공유하지 않습니다.
+
+참고
+• 삭제한 대화는 되돌릴 수 없습니다.
+• ChatGPT의 공개되지 않은 웹 API를 사용하므로 동작이 바뀔 수 있습니다.
+• OpenAI와 관계가 없는 비공식 서드파티 확장입니다. OpenAI의 제휴, 보증, 후원을 받지 않았습니다. ChatGPT와 Codex는 OpenAI의 상표입니다.
+
+소스 코드: https://github.com/nda111/Off-the-Table
+```
+
 **Store icon:** `store/icon_128.png`
 
 **Screenshots:** at least one, 1280×800 or 640×400. Hide account names, emails and private chat titles.
