@@ -2,7 +2,7 @@
 
 Off the Table for ChatGPT ("the extension") is an unofficial, free browser extension for deleting ChatGPT conversations and Codex tasks in bulk. This policy explains what the extension accesses and what it does with it.
 
-Last updated: October 28, 2026
+Last updated: October 31, 2026
 
 ## Summary
 
@@ -16,7 +16,12 @@ The extension does not collect, store, sell or share any personal data. It has n
 
 ## What the extension stores
 
-The extension saves one small item in the chatgpt.com site storage on your computer (`cbd:tip-style`): the colors of ChatGPT's tooltips, so its own tooltips look the same. It contains no personal information. Clearing the site data for chatgpt.com removes it.
+The extension saves two small items in the chatgpt.com site storage on your computer:
+
+- `cbd:tip-style`: the colors of ChatGPT's tooltips, so its own tooltips look the same.
+- `cbd:intro-seen`: a flag noting that you have seen the one-time intro, so it isn't shown again.
+
+Neither contains personal information. Clearing the site data for chatgpt.com removes them.
 
 ## Network requests
 
@@ -31,6 +36,7 @@ It makes no other network requests and does not load remote code.
 
 - **Access to chatgpt.com:** Used to add the selection interface to the ChatGPT sidebar and to send delete requests for the items you choose.
 - **scripting:** Used to add the extension to ChatGPT tabs that were already open before the extension was installed or updated.
+- **contextMenus:** Used to add a "Help" item to the menu you get by right-clicking the toolbar icon.
 
 ## Children
 

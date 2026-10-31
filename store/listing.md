@@ -65,6 +65,12 @@ Select ChatGPT conversations and Codex tasks in the chatgpt.com sidebar and dele
 Used to add the extension's content script and styles to chatgpt.com tabs that were already open before the extension was installed or updated, so the user doesn't have to reload the page. It only injects files packaged with the extension, only on chatgpt.com.
 ```
 
+`contextMenus`
+
+```
+Adds one item, "Help", to the menu shown when the user right-clicks the extension's toolbar icon. It replays the short on-page introduction on chatgpt.com. No other menus are added.
+```
+
 Host permission `https://chatgpt.com/*`
 
 ```

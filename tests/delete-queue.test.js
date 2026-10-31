@@ -52,7 +52,7 @@
       for (const call of calls) call.release.resolve();
       const result = await c.settle(task);
       assert(peak === 5, 'peak exactly five');
-      equal(result, { succeeded: ['a','b','c','d','e','f'], failed: [], pending: [], fatal: null }, 'unique results');
+      equal(result, { succeeded: ['a','b','c','d','e','f'], failed: [], pending: [], fatal: null, aborted: false }, 'unique results');
       equal(c.sleeps.map(s => s.ms), [500], 'no final waits');
     });
     await test('HTTP/network accounting and progress, keep going', async () => {
@@ -150,7 +150,7 @@
     await test('empty, singleton, custom maxRetries zero', async () => {
       const sleeps = []; let calls = 0;
       const options = { sleep: async ms => sleeps.push(ms), deleteOne: async () => { calls++; } };
-      equal(await run([], options), { succeeded: [], failed: [], pending: [], fatal: null }, 'empty');
+      equal(await run([], options), { succeeded: [], failed: [], pending: [], fatal: null, aborted: false }, 'empty');
       await run(['one'], options); assert(calls === 1 && sleeps.length === 0, 'singleton no sleep');
       const result = await run(['a','b'], { ...options, concurrency: 1, maxRetries: 0, deleteOne: async () => { throw http(429); } });
       equal(result.failed, ['a'], 'zero retries'); equal(result.pending, ['b'], 'rest pending');
@@ -182,6 +182,33 @@
       equal(calls.map(r => r.at), [0,2000,2000,2000], 'invalid header uses fallback');
       equal(result.succeeded, ['retry','ok'], 'observer failures do not break queue');
       equal(result.failed, ['bad'], 'plain HTTP failure'); assert(result.fatal === null, 'nonfatal');
+    });
+    await test('abort stops queued work, drains in-flight, ends cooldown waits', async () => {
+      const c = fakeClock(), calls = [], release = deferred(), controller = new AbortController();
+      const task = run(['a','inflight','q1','q2'], {
+        concurrency: 2, delayMs: 500, now: c.now, sleep: c.sleep, signal: controller.signal,
+        deleteOne: async id => { calls.push(id); if (id === 'inflight') await release.promise; }
+      });
+      await flush(); equal(calls, ['a','inflight'], 'initial requests');
+      controller.abort(); release.resolve();
+      const result = await c.settle(task);
+      equal(calls, ['a','inflight'], 'no request after abort');
+      equal(result.succeeded, ['a','inflight'], 'in-flight finishes'); equal(result.pending, ['q1','q2'], 'rest pending');
+      assert(result.aborted === true && result.fatal === null, 'aborted, not fatal');
+
+      const limited = new AbortController(), tries = [];
+      const waiting = run(['x','y'], {
+        concurrency: 1, now: c.now, sleep: c.sleep, signal: limited.signal,
+        deleteOne: async id => { tries.push(id); throw http(429, '60'); }
+      });
+      await flush(); limited.abort();
+      const stopped = await Promise.race([waiting, flush().then(() => 'still waiting')]);
+      assert(stopped !== 'still waiting', 'a 60 s cooldown ends on abort');
+      equal(tries, ['x'], 'no retry after abort'); equal(stopped.pending, ['x','y'], 'retrying and queued stay pending');
+
+      const early = new AbortController(); early.abort(); let none = 0;
+      const skipped = await run(['p'], { signal: early.signal, deleteOne: async () => { none++; } });
+      assert(none === 0 && skipped.aborted && skipped.pending.length === 1, 'already-aborted signal sends nothing');
     });
     return { passed: passed.length, failed: 0, tests: passed };
   }

@@ -213,11 +213,37 @@ chrome.action.onClicked.addListener(tab => {
     });
 });
 
-chrome.tabs.onRemoved?.addListener(tabId => { tabThemes.delete(tabId); tabLocales.delete(tabId); tabModes.delete(tabId); });
+// A fresh install opens ChatGPT, where a one-time spotlight on the sidebar switch explains
+// what to do. Updates and reloads open nothing. The toolbar icon's right-click menu gets
+// a "Help" item that shows that intro again (menus persist, so it is (re)created here).
+const INTRO_MENU = "cbd-show-intro";
+chrome.runtime.onInstalled?.addListener(details => {
+  if (details?.reason === "install") chrome.tabs.create({ url: "https://chatgpt.com/" })?.catch?.(() => {});
+  chrome.contextMenus?.removeAll(() => {
+    chrome.contextMenus.create({ id: INTRO_MENU, title: t(undefined, "showIntro"), contexts: ["action"] }, () => void chrome.runtime.lastError);
+  });
+});
+
+// Shows the intro in a ChatGPT tab; from any other tab, opens ChatGPT and shows it there.
+const introTabs = new Set();
+function showIntro(tabId) {
+  return runForTab(tabId, async () => {
+    const status = await ensureContent(tabId);
+    if (!status.unsupported) await sendToContent(tabId, { type: INTRO_MENU });
+  }).catch(() => {});
+}
+chrome.contextMenus?.onClicked.addListener((info, tab) => {
+  if (info.menuItemId !== INTRO_MENU) return;
+  if (Number.isInteger(tab?.id) && isSupportedURL(tab.url)) { showIntro(tab.id); return; }
+  chrome.tabs.create({ url: "https://chatgpt.com/" }).then(created => { introTabs.add(created.id); }).catch(() => {});
+});
+
+chrome.tabs.onRemoved?.addListener(tabId => { tabThemes.delete(tabId); tabLocales.delete(tabId); tabModes.delete(tabId); introTabs.delete(tabId); });
 
 // A tab that leaves ChatGPT gets the sleeping cat back (its URL is only visible to us on
 // chatgpt.com, so an unreadable URL also means another site).
 chrome.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete" && introTabs.delete(tabId)) showIntro(tabId);
   if (changeInfo.status !== "loading" || isSupportedURL(tab?.url)) return;
   tabThemes.delete(tabId);
   tabModes.delete(tabId);

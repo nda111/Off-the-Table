@@ -21,6 +21,20 @@
     let stopped = false;
     let cooldownUntil = 0;
     let cooldownSleep = null;
+    // options.signal stops the queue: no new requests, waits end at once, and requests
+    // already sent finish (the server may have deleted them). The rest stay pending.
+    let aborted = false;
+    let wake;
+    const woken = new Promise(resolve => { wake = resolve; });
+    function abort() {
+      aborted = true;
+      stopped = true;
+      wake();
+    }
+    if (options.signal) {
+      if (options.signal.aborted) abort();
+      else options.signal.addEventListener('abort', abort, { once: true });
+    }
     // A fulfilled injected sleep counts as elapsed time even with a frozen fake now().
     // Concurrent sleeps advance to their deadlines, not by adding their durations.
     let clockFloor = now();
@@ -28,7 +42,8 @@
     async function wait(ms) {
       if (ms <= 0) return;
       const deadline = clock() + ms;
-      await sleep(ms);
+      await Promise.race([sleep(ms), woken]);
+      if (aborted) return;
       clockFloor = Math.max(clockFloor, deadline);
     }
     function notify(callback, argument) {
@@ -131,11 +146,13 @@
       }
     }
     await Promise.all(Array.from({ length: Math.min(concurrency, uniqueIds.length) }, () => worker()));
+    options.signal?.removeEventListener('abort', abort);
     return {
       succeeded: uniqueIds.filter(id => states.get(id) === 'succeeded'),
       failed: uniqueIds.filter(id => states.get(id) === 'failed'),
       pending: uniqueIds.filter(id => states.get(id) === 'pending'),
-      fatal
+      fatal,
+      aborted
     };
   }
 

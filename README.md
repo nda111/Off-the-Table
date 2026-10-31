@@ -30,7 +30,7 @@ To update, replace the folder, press reload on the extension card, and reload Ch
 
 1. Turn on delete mode with the trash button at the top of the ChatGPT sidebar, the toolbar icon, or **Ctrl+D** (Mac: **⌘D**).
 2. Click conversations to select them. Selected rows are tinted with your ChatGPT theme color.
-3. Press the trash button in the panel to delete the selection. The button shows how many are selected.
+3. Press the trash button in the panel to delete the selection. The button shows how many are selected. While deleting, it turns into a stop button; press it (or Esc) to stop. Chats that weren't deleted yet stay selected.
 4. Turn delete mode off the same way you turned it on. The selection is cleared.
 
 - The panel shows how many conversations were found, such as "10 Chats". **Select all** picks every conversation loaded in the sidebar, including ones scrolled out of view. Scroll the sidebar to load older ones.
@@ -41,6 +41,8 @@ To update, replace the folder, press reload on the extension card, and reload Ch
 ### Toolbar icon
 
 The cat on the toolbar shows the state: sitting means delete mode is off, swatting means it is on, and a gray sleeping cat means the tab isn't ChatGPT. A red **ERR** badge means something went wrong; hover the icon to see the message.
+
+When you first install the extension, ChatGPT opens and the page dims around the trash button to show where to start. To see that again, right-click the toolbar icon and choose **Help**.
 
 ## Shortcuts
 
@@ -54,7 +56,7 @@ Hover the `?` button in the panel to see these at any time.
 | Shift+End / Shift+Home | Extend from the last conversation you changed to the end / start of the list |
 | Ctrl+A (Mac: ⌘A) | Select all |
 | Delete | Delete the selection |
-| Esc | Clear the selection, or leave delete mode if nothing is selected |
+| Esc | Stop deleting; otherwise clear the selection, or leave delete mode if nothing is selected |
 | Space / Enter | Select or clear the focused conversation |
 | Ctrl+D (Mac: ⌘D) | Turn delete mode on or off |
 
