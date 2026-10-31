@@ -220,6 +220,15 @@
   const sideTip = el("div", { className: "cbd-tip", id: "cbd-side-tip", role: "tooltip", hidden: true }, [sideTipLabel, sideTipKeys]);
   sideBtn.setAttribute("aria-describedby", "cbd-side-tip");
   let sideTipTimer = 0;
+  // A one-time callout under the switch that introduces the extension. It stays until
+  // it is closed or delete mode is turned on, and is not shown again after that.
+  const INTRO_STORAGE = "cbd:intro-seen";
+  const introText = el("span");
+  const introKeys = el("kbd");
+  const introClose = el("button", { type: "button", className: "cbd-intro-close", textContent: "×" });
+  const intro = el("div", { className: "cbd-tip cbd-intro", role: "note", hidden: true }, [introText, introKeys, introClose]);
+  let introSeen = false;
+  try { introSeen = Boolean(view.localStorage.getItem(INTRO_STORAGE)); } catch { introSeen = true; }
   // Light/dark of the page, and ChatGPT tooltip colors learned per mode (see learnTipStyle).
   let pageLight = true;
   const TIP_STORAGE = "cbd:tip-style";
@@ -388,6 +397,7 @@
     sideBtn.setAttribute("aria-pressed", String(state.enabled));
     sideBtn.setAttribute("aria-label", t(state.enabled ? "sideTurnOff" : "sideTurnOn"));
     renderSideTip();
+    renderIntro(docked);
     setShown(bar, state.enabled);
     if (state.enabled) { observeMain(); placeBar(); }
     // Lets the stylesheet hide ChatGPT's hover actions while in delete mode. Re-applied
@@ -416,6 +426,7 @@
     if (state.busy && state.progress) {
       const progress = state.progress;
       text = t("progress", { done: progress.completed, total: progress.total });
+      if (!stopController?.signal.aborted) text += ` · ${t("stopHint")}`;
       if (state.cooldownUntil > Date.now()) text += ` · ${t("cooldown", { n: Math.ceil((state.cooldownUntil - Date.now()) / 1000) })}`;
       if (state.message) text += ` · ${state.message}`;
     }
@@ -592,6 +603,7 @@
       throw new Error(state.message);
     }
     state.enabled = on;
+    if (on) dismissIntro();
     state.anchorId = null;
     endDrag();
     if (on) applyTheme();
@@ -1197,7 +1209,10 @@
     const mode = pageLight ? "light" : "dark";
     const learned = Object.fromEntries(Object.entries(learnedTips[mode] || {}).filter(([, value]) => value));
     const style = { ...TIP_DEFAULTS[mode], ...learned };
-    for (const [name, value] of Object.entries(style)) sideTip.style.setProperty(`--cbd-tip-${name}`, value);
+    for (const [name, value] of Object.entries(style)) {
+      sideTip.style.setProperty(`--cbd-tip-${name}`, value);
+      intro.style.setProperty(`--cbd-tip-${name}`, value);
+    }
   }
   function learnTipStyle(tip) {
     const box = view.getComputedStyle(tip), kbd = tip.querySelector("kbd");
@@ -1226,16 +1241,37 @@
     setText(sideTipKeys, toggleKeys());
     if (!sideTip.hidden) placeSideTip();
   }
-  function placeSideTip() {
-    const anchor = sideBtn.getBoundingClientRect(), tip = sideTip.getBoundingClientRect();
+  // Centers a chip under the switch, kept inside the window.
+  function placeUnderSwitch(node) {
+    const anchor = sideBtn.getBoundingClientRect(), tip = node.getBoundingClientRect();
     const left = Math.min(Math.max(8, anchor.left + anchor.width / 2 - tip.width / 2), view.innerWidth - tip.width - 8);
-    sideTip.style.setProperty("--cbd-tip-left", `${Math.round(left)}px`);
-    sideTip.style.setProperty("--cbd-tip-top", `${Math.round(anchor.bottom + 6)}px`);
+    node.style.setProperty("--cbd-tip-left", `${Math.round(left)}px`);
+    node.style.setProperty("--cbd-tip-top", `${Math.round(anchor.bottom + 6)}px`);
   }
+  function placeSideTip() { placeUnderSwitch(sideTip); }
+  function renderIntro(docked) {
+    const show = !introSeen && docked && !state.enabled && Boolean(document.body);
+    if (show && !intro.isConnected) document.body.append(intro);
+    intro.hidden = !show;
+    if (!show) return;
+    setText(introText, t("introTip"));
+    setText(introKeys, toggleKeys());
+    introClose.setAttribute("aria-label", t("introClose"));
+    placeUnderSwitch(intro);
+  }
+  function dismissIntro() {
+    if (introSeen) return;
+    introSeen = true;
+    try { view.localStorage.setItem(INTRO_STORAGE, "1"); } catch { /* storage blocked */ }
+    intro.hidden = true;
+  }
+  listen(introClose, "click", dismissIntro);
+  listen(view, "resize", () => { if (!intro.hidden) placeUnderSwitch(intro); });
   function showSideTip(delay) {
     clearTimeout(sideTipTimer);
     sideTipTimer = setTimeout(() => {
-      if (!sideBtn.isConnected || !document.body) return;
+      // The intro already sits under the switch and says the same.
+      if (!sideBtn.isConnected || !document.body || !intro.hidden) return;
       if (!sideTip.isConnected) document.body.append(sideTip);
       renderSideTip();
       sideTip.hidden = false;
@@ -1406,6 +1442,7 @@
     sideBtn.remove();
     clearTimeout(sideTipTimer);
     sideTip.remove();
+    intro.remove();
     barResize?.disconnect();
     if (globalThis[INSTANCE]?.destroy === destroy) delete globalThis[INSTANCE];
   }

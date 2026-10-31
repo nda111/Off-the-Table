@@ -176,6 +176,13 @@ a[data-cbd="vanishing"], [data-cbd-row="vanishing"] {
   padding: 0 6px; border-radius: 8px; background: var(--cbd-tip-kbd, rgba(255, 255, 255, .25)); color: inherit; font: inherit;
 }
 @keyframes cbd-tip-in { from { opacity: 0; transform: translateY(-2px); } }
+/* The one-time intro chip can be closed, so it takes pointer input. */
+.cbd-tip.cbd-intro { pointer-events: auto !important; padding-right: 6px; }
+.cbd-intro-close {
+  all: unset; display: inline-grid !important; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  cursor: pointer; font-size: 16px; line-height: 1; opacity: .7;
+}
+.cbd-intro-close:hover, .cbd-intro-close:focus-visible { opacity: 1; background: var(--cbd-tip-kbd, rgba(255, 255, 255, .25)); }
 /* Search and sidebar toggle while delete mode is ON. */
 /* Locked controls (and the row drawn around overlay buttons) look disabled: dimmed and
    desaturated, with no pointer interaction, so ChatGPT's hover styles and hover

@@ -93,11 +93,13 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
   try {
     initialize(document, chromeMock, isolated, fakeFetch, () => true);
     assert(status().count === 0, "Nothing is counted while delete mode is OFF");
+    const intro = () => document.querySelector(".cbd-intro");
     const ctrlD = new KeyboardEvent("keydown", { key: "ㅇ", code: "KeyD", ctrlKey: true, bubbles: true, cancelable: true });
     document.body.dispatchEvent(ctrlD);
     assert(status().enabled && ctrlD.defaultPrevented, "Ctrl+D turns delete mode on (by key position, so a Korean layout works) instead of bookmarking");
     document.body.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyD", key: "d", ctrlKey: true, bubbles: true, cancelable: true }));
     assert(!status().enabled, "...and off again");
+    assert(localStorage.getItem("cbd:intro-seen") && (!intro() || intro().hidden), "Turning delete mode on retires the intro");
     const shiftD = new KeyboardEvent("keydown", { code: "KeyD", key: "D", ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true });
     document.body.dispatchEvent(shiftD);
     assert(!status().enabled && !shiftD.defaultPrevented, "Other modifier combinations are left alone");
@@ -137,10 +139,22 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
       + '<button class="f-explore" aria-haspopup="menu" aria-label="Explorer">Explorer</button>';
     nav.append(foreign);
     await settle();
-    const side = header.querySelector(".cbd-side-switch");
+    let side = header.querySelector(".cbd-side-switch");
     assert(side && side.nextElementSibling === header.querySelector(".tip") && side.classList.contains("Button-q")
       && side.dataset.variant === "transparent" && side.firstElementChild.className === "ButtonInner-U" && side.querySelector("svg"),
       "The trash switch sits left of search and borrows its classes");
+    // A fresh install (simulated by clearing the flag and reinjecting) shows the intro once.
+    localStorage.removeItem("cbd:intro-seen");
+    initialize(document, chromeMock, isolated, fakeFetch, () => true);
+    await settle();
+    assert(intro() && !intro().hidden && intro().textContent.startsWith("여기서 대화를 한꺼번에 삭제할 수 있습니다")
+      && intro().querySelector("kbd").textContent === "Ctrl+D", "A first visit shows the intro chip under the switch");
+    side = header.querySelector(".cbd-side-switch");
+    side.dispatchEvent(new Event("pointerenter"));
+    await new Promise(resolve => setTimeout(resolve, 350));
+    assert(!document.getElementById("cbd-side-tip") || document.getElementById("cbd-side-tip").hidden, "The hover tip stays out of the intro's way");
+    intro().querySelector(".cbd-intro-close").click();
+    assert(intro().hidden && localStorage.getItem("cbd:intro-seen"), "Closing the intro hides it for good");
     // Chip tooltip like ChatGPT's: label plus shortcut, after a short hover delay.
     assert(!side.hasAttribute("title"), "No native title tooltip on the switch");
     side.dispatchEvent(new Event("pointerenter"));
@@ -404,6 +418,7 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
     assert(status().count === 5 && status().selected === 5, "Re-enabling re-detects only the chats now in the sidebar");
     initialize(document, chromeMock, isolated, fakeFetch, () => true);
     assert(document.querySelectorAll(".cbd-bar").length === 1 && messageListeners.length === 1, "Reinjection does not duplicate UI or listeners");
+    assert(document.querySelectorAll(".cbd-intro").length === 0, "A dismissed intro is not added again on reinjection");
     assert(status().selected === 5 && label(selectionButton()) === "전체 해제" && !beta.hasAttribute("href"),
       "Selection survives reinjection, which restores and re-strips links");
     selectionButton().click();
@@ -560,8 +575,10 @@ globalThis.runCBDUITests = async function ({ contentSource, queueSource, i18nSou
     await until(() => pendingResponses.length === 3);
     assert(!deleteButton().disabled && label(deleteButton()) === "삭제 중지" && deleteButton().querySelector(".cbd-stop-icon"),
       "While deleting, the delete button becomes a stop button");
+    assert(document.querySelector(".cbd-feedback").textContent.endsWith(" · Esc로 중지"), "Progress mentions Esc to stop");
     deleteButton().click();
-    assert(deleteButton().disabled, "Stop can be pressed once");
+    assert(deleteButton().disabled && !document.querySelector(".cbd-feedback").textContent.includes("Esc"),
+      "Stop can be pressed once, and the hint goes away");
     pendingResponses.splice(0).forEach(release => release());
     await until(() => !status().busy);
     assert(requestCount === 3 && status().selected === 3, "Stopping sends no new requests; unsent chats stay selected");
