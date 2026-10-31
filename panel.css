@@ -183,6 +183,10 @@ a[data-cbd="vanishing"], [data-cbd-row="vanishing"] {
   font: 600 14px/18px -apple-system-body, ui-sans-serif, -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 .cbd-intro[hidden] { display: none !important; }
+/* Leaving fades out instead of reversing, so the page is usable again at once. */
+.cbd-intro[hidden][data-cbd-leaving] { display: block !important; animation: cbd-intro-out var(--cbd-dur-out) ease-in forwards; }
+.cbd-intro[hidden][data-cbd-leaving] .cbd-intro-close { pointer-events: none !important; }
+@keyframes cbd-intro-out { to { opacity: 0; } }
 .cbd-intro-spot {
   position: absolute; left: var(--cbd-spot-x, 0); top: var(--cbd-spot-y, 0);
   width: var(--cbd-spot-w, 0); height: var(--cbd-spot-h, 0); border-radius: 12px;

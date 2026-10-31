@@ -1254,7 +1254,7 @@
   function renderIntro(docked) {
     const show = !introSeen && docked && !state.enabled && Boolean(document.body);
     if (show && !intro.isConnected) document.body.append(intro);
-    intro.hidden = !show;
+    setShown(intro, show);
     if (!show) return;
     setText(introText, t("introTip"));
     setText(introKeys, toggleKeys());
@@ -1277,7 +1277,7 @@
     if (introSeen) return;
     introSeen = true;
     try { view.localStorage.setItem(INTRO_STORAGE, "1"); } catch { /* storage blocked */ }
-    intro.hidden = true;
+    setShown(intro, false);
   }
   // Asked for again from the toolbar icon's menu. Delete mode is left so the switch shows.
   function replayIntro() {
